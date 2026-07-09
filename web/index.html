@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>X-LiveCast · Voice Room</title>
+  <meta property="og:title" content="X-LiveCast Voice Room" />
+  <meta property="og:description" content="A live, interruptible voice briefing from your X feed." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="X-LiveCast Voice Room" />
+  <meta name="twitter:description" content="A live, interruptible voice briefing from your X feed." />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <main class="room">
+    <header class="room__header">
+      <div class="brand">
+        <span class="brand__dot"></span>
+        X-LiveCast
+      </div>
+      <span id="status" class="status status--idle">idle</span>
+    </header>
+
+    <div class="orb-row">
+      <button id="replayBack" class="orb-side-btn" title="Replay: back 5s in this morning's intro" disabled>
+        ⏪<span>5s</span>
+      </button>
+      <section class="orb" id="orb" role="button" tabindex="0" aria-label="Start or pause the session">
+        <div class="orb__core"></div>
+        <div class="orb__ring"></div>
+        <div class="orb__icon" id="orbIcon">▶</div>
+      </section>
+      <button id="replayFwd" class="orb-side-btn" title="Replay: forward 5s in this morning's intro" disabled>
+        <span>5s</span>⏩
+      </button>
+    </div>
+    <div class="orb__label" id="orbLabel">Tap to start</div>
+
+    <section class="captions" id="captions" aria-live="polite">
+      <p class="captions__hint">Tap the circle above, allow the microphone,
+        and talk over the host any time to interrupt.</p>
+    </section>
+
+    <footer class="controls">
+      <button id="muteBtn" class="btn" disabled>Mute mic</button>
+      <button id="stopBtn" class="btn btn--danger" disabled>End</button>
+    </footer>
+
+    <details class="brief" id="briefPanel">
+      <summary>Today's brief (preview)</summary>
+      <pre id="briefText" class="brief__text">Loading…</pre>
+    </details>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

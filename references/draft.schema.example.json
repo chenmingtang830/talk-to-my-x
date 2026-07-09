@@ -1,0 +1,24 @@
+{
+  "_comment": "Schema + example for drafts/latest.json. Written by the harness from sessions/latest.json + recap_template.md. Either `text` (single post) OR `thread` (array of post texts) should be set, not both.",
+  "generated_at": "2026-07-08T09:10:00-07:00",
+  "from_session": "sessions/20260708T022721.json",
+
+  "_example_single_post": {
+    "text": "Did my X-LiveCast run this morning \u2014 went deep on agent-native tooling. Turns out someone's building an agent-native version of Git that snapshots run state. Wild. https://x.com/_avichawla/status/2073746091795960237",
+    "sources": [
+      {"id": "2073746091795960237", "author": "_avichawla", "url": "https://x.com/_avichawla/status/2073746091795960237"}
+    ]
+  },
+
+  "_example_thread": {
+    "thread": [
+      "Ran my morning X-LiveCast and ended up down a rabbit hole on agent-native tooling. Here's what stuck \ud83e\uddf5",
+      "1/ Stanford built an agent-native version of Git \u2014 snapshots a run's full state (files, dev server, DB, KV cache). I asked the host to pull it up mid-conversation: https://x.com/_avichawla/status/2073746091795960237",
+      "2/ calcsam shipped file-based agents in Mastra \u2014 a folder literally becomes the agent. My takeaway: the 'agent as directory of files' pattern is becoming a real convention. https://x.com/calcsam/status/2073101068171714945"
+    ],
+    "sources": [
+      {"id": "2073746091795960237", "author": "_avichawla", "url": "https://x.com/_avichawla/status/2073746091795960237"},
+      {"id": "2073101068171714945", "author": "calcsam", "url": "https://x.com/calcsam/status/2073101068171714945"}
+    ]
+  }
+}
