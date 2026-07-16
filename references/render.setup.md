@@ -31,7 +31,10 @@ Native **Python 3** only (no Docker).
 | `XLC_DATA_DIR` | `/var/data` |
 | `XLC_PUBLIC_URL` | `https://<your-service>.onrender.com` *(after first deploy)* |
 
-5. **Disk** (Starter+): mount path `/var/data`, ≥1 GB.
+5. **Disk** (Starter+): left nav **Disk** → create disk, mount path **`/var/data`**, ≥1 GB.
+   If you set `XLC_DATA_DIR=/var/data` **without** a mounted disk, boot used to crash
+   with `Permission denied: '/var/data'`. Current code falls back to repo-local dirs,
+   but sessions won't survive redeploys until the disk is attached.
 
 6. Deploy → open `https://<service>.onrender.com/health`.
 
