@@ -20,7 +20,7 @@ paths below are under that root instead of the repo checkout.
 | --- | --- |
 | **Current** | `briefs/latest.json` — what the host reads on a fresh Start |
 | **History** | timestamped copies `briefs/YYYYMMDD….json` (generate snapshots the previous latest) |
-| **Written by** | room **Generate today’s brief** (`POST /brief/generate`), `python3 scripts/generate_brief.py`, or the harness recipe in `SKILL.md` |
+| **Written by** | room **Generate** / daily cron (`POST /brief/generate`), `python3 scripts/generate_brief.py` (bookmarks + home timeline), or harness recipe |
 | **Fallback** | if no `latest.json`, room serves `assets/sample-brief.md` (UI badge: Sample brief) |
 
 ## Post drafts (Synthesize)
@@ -32,17 +32,18 @@ paths below are under that root instead of the repo checkout.
 | **After publish** | same files gain `published_at`, `tweet_ids`, `urls` |
 | **UI** | **Drafts library** dropdown (`GET /drafts`) → load into the draft panel; or Synthesize in-session |
 
-## Taste / user prefs — **not** auto-updated (this release)
+## Taste / user prefs — Hermes-lite evolve
 
 | File | Role | Who updates |
 | --- | --- | --- |
 | `prompt.md` | What the brief covers + tone | **You** (or bundle import) |
 | `recap_template.md` | How Synthesize should write posts | **You** |
-| `memory/USER.md` | Who you are / durable prefs | **You** (scaffold) |
-| `memory/TASTE.md` | Voice / depth / cite style | **You** (or bundle import) |
+| `memory/USER.md` | Who you are / durable prefs | **You**, or **Apply** after Synthesize |
+| `memory/TASTE.md` | Voice / depth / cite style | **You**, or **Apply** after Synthesize |
 
-The room does **not** rewrite these after a call. Evolving taste memory is a later PR.
-Transcripts stay in `sessions/` — don't dump them into `memory/`.
+Default `XLC_MEMORY_EVOLVE=suggest`: Synthesize proposes edits; room UI **Apply to memory**.
+Use `auto` to write immediately (`.bak` kept). On cloud, runtime files are under
+`$XLC_DATA_DIR/memory/`. Transcripts stay in `sessions/`.
 
 ## Bundles (CLI / host)
 

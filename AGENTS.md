@@ -14,7 +14,8 @@ Quick facts for the agent:
   data (X MCP or `scripts/x_tools.py`), write `briefs/latest.json` (schema:
   `references/brief.schema.example.json`).
 - **How to run (local vs Render):** `references/run-modes.md`. Cloud knobs:
-  `references/render.setup.md`. Text model: `XLC_SYNTH_MODEL` in `.env` / Render.
+  `references/render.setup.md`. Daily cron: `references/daily-brief.cron.md`.
+  Text model: `XLC_SYNTH_MODEL`. Memory evolve: `XLC_MEMORY_EVOLVE` (`suggest`/`auto`/`off`).
 - Talk to it: `python3 scripts/voice_room.py` (needs `GEMINI_API_KEY` in `.env`).
   Always-on: set `XLC_PUBLIC_URL`, keep the room up, then
   `bash scripts/ensure_room.sh --dm` or `python3 scripts/voice_room.py --dm-only`

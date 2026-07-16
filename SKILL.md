@@ -167,9 +167,10 @@ during the live call — it happens in the outer agent (Phase D) with confirmati
 
 ## Generating a daily brief (recipe for the harness)
 
-**Scripted path (cloud / room UI):** `python3 scripts/generate_brief.py` or the
-room’s **Generate today’s brief** button (`POST /brief/generate`) — same recipe
-(prompt + memory + `bookmarks-new` → Gemini → `briefs/latest.json` + `mark-seen`).
+**Scripted path (cloud / room UI / daily cron):** `python3 scripts/generate_brief.py`
+or **Generate today’s brief** (`POST /brief/generate`) — prompt + memory +
+**new bookmarks + home timeline** → Gemini → `briefs/latest.json` + `mark-seen`.
+Optional morning cron: [`references/daily-brief.cron.md`](references/daily-brief.cron.md).
 
 **Harness path:** when the agent runs this on demand or via cron, do the following:
 
@@ -337,5 +338,6 @@ See `references/config.example.md` and `.env.example`. Key settings:
 - [x] E. Feed bundle export/import (`bundle_tools` CLI; host-side, not room UI)
 - [x] F. Cloud product loop (Render Disk + xurl, `generate_brief` / `POST /brief/generate`,
       room **Generate today’s brief**, drafts library `GET /drafts`)
-- [ ] Next: Hermes-lite evolving `memory/USER.md` + `memory/TASTE.md` (approval-gated)
-- [ ] Later: ClawHub packaging polish
+- [x] G. Brief sources = bookmarks + home timeline; daily cron docs (default ET 08:00)
+- [x] H. Hermes-lite `USER.md` / `TASTE.md` evolve (`suggest` Apply UI, or `auto`)
+- [ ] Later: ClawHub packaging polish; priority-account searches in scripted brief

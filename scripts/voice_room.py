@@ -13,8 +13,9 @@ It:
   - serves the static UI in ../web
   - GET /config  mints a short-lived Gemini ephemeral token (never the real key)
   - GET /brief   returns the briefing script + structured grounding (items/sources)
-  - POST /brief/generate  regenerate brief from new bookmarks (token-gated)
+  - POST /brief/generate  regenerate brief from bookmarks+timeline (token/cron)
   - GET /drafts  list post drafts; GET /draft?id= load one
+  - POST /memory/evolve|apply  Hermes-lite USER/TASTE updates (token-gated)
   - GET/POST /tool, /tools, /session(s), /synthesize  in-call + thread APIs
 
 Modes:
@@ -47,6 +48,8 @@ import x_tools  # noqa: E402 (local module, after sys.path setup)
 import publish as publish_mod  # noqa: E402
 import bundle_tools as bundle_mod  # noqa: E402
 import generate_brief as generate_brief_mod  # noqa: E402
+import evolve_memory as evolve_memory_mod  # noqa: E402
+import memory_store  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB_DIR = ROOT / "web"
@@ -91,6 +94,10 @@ def apply_data_dir() -> None:
     publish_mod.DRAFTS_DIR = DRAFTS_DIR
     bundle_mod.BUNDLES_DIR = BUNDLES_DIR
     x_tools.apply_state_dir(base)
+    # Seed / point memory at the disk so evolved USER/TASTE survive redeploys.
+    os.environ.setdefault("XLC_DATA_DIR", str(base))
+    mem = memory_store.memory_dir()
+    sys.stderr.write(f"[X-LiveCast] Memory dir: {mem}\n")
     # Prefer HOME under the disk so ~/.xurl survives redeploys (Render).
     home = base / "home"
     try:
@@ -181,6 +188,18 @@ def require_room_token(handler: BaseHTTPRequestHandler) -> bool:
         return True
     handler._send_json(401, {"error": "unauthorized", "hint": "pass X-XLC-Token or ?token="})
     return False
+
+
+def cron_secret() -> str:
+    return cfg("XLC_CRON_SECRET", "")
+
+
+def require_room_or_cron(handler: BaseHTTPRequestHandler) -> bool:
+    """Allow room token OR X-XLC-Cron header matching XLC_CRON_SECRET."""
+    secret = cron_secret()
+    if secret and (handler.headers.get("X-XLC-Cron") or "").strip() == secret:
+        return True
+    return require_room_token(handler)
 
 
 def read_brief_full() -> dict:
@@ -667,6 +686,16 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(200, {"drafts": list_drafts()})
             return
 
+        if route == "/memory/proposal":
+            if not require_room_token(self):
+                return
+            prop = evolve_memory_mod.load_latest_proposal()
+            if not prop:
+                self._send_json(404, {"error": "no proposal"})
+                return
+            self._send_json(200, prop)
+            return
+
         if route == "/bundle":
             if not require_room_token(self):
                 return
@@ -750,7 +779,15 @@ class Handler(BaseHTTPRequestHandler):
                 return
             try:
                 draft = synthesize_draft(sid)
-                self._send_json(200, {"draft": draft})
+                memory = None
+                if evolve_memory_mod.evolve_mode() != "off":
+                    session = load_session(sid)
+                    if session:
+                        try:
+                            memory = evolve_memory_mod.evolve_from_session(session)
+                        except Exception as mem_exc:  # noqa: BLE001
+                            memory = {"ok": False, "error": str(mem_exc)}
+                self._send_json(200, {"draft": draft, "memory": memory})
             except error.HTTPError as exc:
                 detail = exc.read().decode("utf-8", "replace")
                 self._send_json(exc.code, {"error": "gemini_error", "detail": detail})
@@ -759,30 +796,72 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if route == "/brief/generate":
-            if not require_room_token(self):
+            if not require_room_or_cron(self):
                 return
             limit = payload.get("limit", 25)
             try:
                 limit = int(limit)
             except (TypeError, ValueError):
                 limit = 25
+            allow_empty = payload.get("allow_empty") is True
             try:
                 # Keep generate_brief on the same volume as the room's BRIEFS_DIR.
                 if BRIEFS_DIR.resolve() != (ROOT / "briefs").resolve():
                     os.environ["XLC_DATA_DIR"] = str(BRIEFS_DIR.parent)
-                result = generate_brief_mod.generate_brief(bookmark_limit=limit)
+                result = generate_brief_mod.generate_brief(
+                    bookmark_limit=limit,
+                    timeline_limit=limit,
+                    allow_empty=allow_empty,
+                )
                 brief = read_brief_full()
                 self._send_json(200, {
                     "ok": True,
+                    "skipped": bool(result.get("_skipped")),
                     "brief": brief,
                     "title": result.get("title"),
                     "new_bookmarks": result.get("_new_bookmark_count"),
+                    "new_timeline": result.get("_new_timeline_count"),
                     "marked_seen": result.get("_marked_seen"),
                     "saved": result.get("_saved"),
+                    "reason": result.get("_reason"),
                 })
             except error.HTTPError as exc:
                 detail = exc.read().decode("utf-8", "replace")
                 self._send_json(exc.code, {"error": "gemini_error", "detail": detail})
+            except Exception as exc:  # noqa: BLE001
+                self._send_json(500, {"error": str(exc)})
+            return
+
+        if route == "/memory/evolve":
+            if not require_room_token(self):
+                return
+            sid = (payload.get("session_id") or payload.get("id") or "").strip()
+            if not sid:
+                latest = load_session("latest")
+                sid = (latest or {}).get("id") or ""
+            if not sid:
+                self._send_json(400, {"error": "no session_id"})
+                return
+            session = load_session(sid)
+            if not session:
+                self._send_json(404, {"error": "session not found"})
+                return
+            try:
+                mode = (payload.get("mode") or "").strip() or None
+                result = evolve_memory_mod.evolve_from_session(session, mode=mode)
+                self._send_json(200, result)
+            except error.HTTPError as exc:
+                detail = exc.read().decode("utf-8", "replace")
+                self._send_json(exc.code, {"error": "gemini_error", "detail": detail})
+            except Exception as exc:  # noqa: BLE001
+                self._send_json(500, {"error": str(exc)})
+            return
+
+        if route == "/memory/apply":
+            if not require_room_token(self):
+                return
+            try:
+                self._send_json(200, evolve_memory_mod.apply_proposal())
             except Exception as exc:  # noqa: BLE001
                 self._send_json(500, {"error": str(exc)})
             return
