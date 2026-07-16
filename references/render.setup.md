@@ -25,31 +25,44 @@ Native **Python 3** only (no Docker).
 
 Install `xurl` once per deploy and put it on `PATH`:
 
+Install into the service slug (and copy into `./.local/bin` so runtime finds it
+even when Start sets `HOME=/var/data/home`):
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xdevplatform/xurl/main/install.sh | bash && export PATH="$HOME/.local/bin:$PATH" && which xurl
+export HOME=/opt/render/project && mkdir -p "$HOME/.local/bin" .local/bin && curl -fsSL https://raw.githubusercontent.com/xdevplatform/xurl/main/install.sh | bash && export PATH="$HOME/.local/bin:$PATH" && cp -f "$HOME/.local/bin/xurl" .local/bin/xurl && ./.local/bin/xurl --version && echo "xurl at $(pwd)/.local/bin/xurl"
 ```
 
-Render’s build shell `HOME` is ephemeral; the **runtime** process needs tokens on the Disk (see env below). If the install script puts the binary under `~/.local/bin`, either:
-
-- set env `XLC_XURL_BIN` to that path after checking Shell (`which xurl`), or
-- extend Start Command:  
-  `export PATH="$HOME/.local/bin:$PATH"; python3 scripts/voice_room.py --share`
+Optional: set env `XLC_XURL_BIN=/opt/render/project/src/.local/bin/xurl`.
 
 ### Environment
 
 | Key | Value |
 | --- | --- |
 | `GEMINI_API_KEY` | your key |
+| `XLC_SYNTH_MODEL` | e.g. `gemini-3.5-flash` *(Generate brief + Synthesize; not Live voice)* |
 | `XLC_NO_BROWSER` | `1` |
 | `XLC_TUNNEL_MODE` | `none` |
 | `XLC_DATA_DIR` | `/var/data` |
-| `HOME` | `/var/data/home` |
 | `XLC_PUBLIC_URL` | `https://<your-service>.onrender.com` *(after first deploy)* |
-| `XLC_XURL_BIN` | *(optional)* absolute path to `xurl` if not on PATH |
+| `XLC_XURL_BIN` | *(optional)* e.g. `/opt/render/project/src/.local/bin/xurl` |
 | `XLC_XURL_APP` | *(optional)* `xurl` app name if not the default |
 | `XLC_ROOM_TOKEN` | *(optional)* gate `/config`, generate, publish, etc. |
 
-`HOME=/var/data/home` keeps `~/.xurl` on the persistent disk across redeploys.
+Step-by-step local vs cloud checklists: [`run-modes.md`](run-modes.md).
+
+**Do not set `HOME=/var/data/home` as a service env var** — Render applies it during
+**build** too, and `/var/data` is read-only until runtime (xurl install will fail with
+`mkdir: cannot create directory '/var/data'`). Instead set HOME in **Start Command**:
+
+```bash
+export HOME=/var/data/home; mkdir -p "$HOME"; export PATH="$(pwd)/.local/bin:$PATH"; python3 scripts/voice_room.py --share
+```
+
+And force a writable HOME during **Build** when installing xurl:
+
+```bash
+export HOME=/opt/render/project && mkdir -p "$HOME" .local/bin && curl -fsSL https://raw.githubusercontent.com/xdevplatform/xurl/main/install.sh | bash && XBIN=$(command -v xurl || true) && test -n "$XBIN" && cp -f "$XBIN" .local/bin/xurl && test -x .local/bin/xurl && echo "xurl at $(pwd)/.local/bin/xurl"
+```
 
 ### Disk
 

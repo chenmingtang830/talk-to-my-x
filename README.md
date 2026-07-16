@@ -12,18 +12,19 @@ each reads `AGENTS.md` / `CLAUDE.md` → `SKILL.md`. X auth is via `xurl`.
 > `xurl` (live tools + DM + publish), always-on HTTPS host. **Never auto-posts**
 > — publishing always requires an explicit confirm. Manual checklist: [`TESTING.md`](TESTING.md).
 
-## Basic vs advanced
+## Local vs cloud (how to operate)
 
-| | Basic (demo) | Advanced (daily) |
+**Full step-by-step checklists:** [`references/run-modes.md`](references/run-modes.md).
+
+| | **Local** (start here) | **Cloud (Render)** |
 | --- | --- | --- |
-| Host | Your laptop | Always-on box / OpenClaw gateway |
-| Link | Temporary `*.trycloudflare.com` | Evergreen `XLC_PUBLIC_URL` |
-| Command | `voice_room.py --share --dm` | `ensure_room.sh --dm` |
-| Setup | [`README` quick start](#quick-start-voice-room-demo) | [`references/always-on.setup.md`](references/always-on.setup.md) |
+| Host | Your laptop | Render Web Service + Disk |
+| UI | `http://localhost:8787` | `https://…onrender.com` |
+| Setup | [Quick start](#quick-start-voice-room-demo) below | [`references/render.setup.md`](references/render.setup.md) |
+| Always-on tunnel (non-Render) | — | [`references/always-on.setup.md`](references/always-on.setup.md) |
 
 Sessions, briefs, and drafts live on the **host disk**, not on the phone.
-Where each file goes, what auto-saves, and what you edit by hand:
-[`references/local-layout.md`](references/local-layout.md).
+Where each file goes: [`references/local-layout.md`](references/local-layout.md).
 
 ## Why it's different
 
@@ -46,7 +47,8 @@ python3 scripts/voice_room.py
 Browser → `http://localhost:8787` → **Start**. Hang up keeps the thread;
 **Synthesize** builds a draft; **Publish to X** asks for confirm first.
 
-Env: `XLC_PORT`, `XLC_GEMINI_MODEL`, `XLC_GEMINI_VOICE` (see `.env.example`).
+Env: `XLC_PORT`, `XLC_GEMINI_MODEL` (Live voice), `XLC_SYNTH_MODEL` (Generate brief /
+Synthesize text), `XLC_GEMINI_VOICE` — see `.env.example`.
 
 ### On the road: always-on URL (primary)
 

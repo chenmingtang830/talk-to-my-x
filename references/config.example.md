@@ -15,7 +15,7 @@ file in the skill root). Copy `.env.example` to `.env` and edit.
 | `XLC_PUBLIC_URL` | (unset) | Evergreen HTTPS origin (always-on). |
 | `XLC_TUNNEL_MODE` | see above | `named` \| `quick` \| `none`. |
 | `XLC_ROOM_TOKEN` | (unset) | Optional API gate for the shared room. |
-| `XLC_SYNTH_MODEL` | `gemini-2.5-flash` | Text model for Synthesize / recap. |
+| `XLC_SYNTH_MODEL` | `gemini-3.5-flash` | Text model for Generate brief + Synthesize (not Live voice). |
 | `XLC_NO_BROWSER` | (unset) | Set `1` to skip opening a browser on local-only starts. |
 
 ## Publishing (confirm required)

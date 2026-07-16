@@ -12,7 +12,9 @@ Quick facts for the agent:
   brief** (`POST /brief/generate`), or the harness recipe in `SKILL.md` —
   read `prompt.md` (and optional `memory/USER.md` / `memory/TASTE.md`), pull X
   data (X MCP or `scripts/x_tools.py`), write `briefs/latest.json` (schema:
-  `references/brief.schema.example.json`). Cloud: `references/render.setup.md`.
+  `references/brief.schema.example.json`).
+- **How to run (local vs Render):** `references/run-modes.md`. Cloud knobs:
+  `references/render.setup.md`. Text model: `XLC_SYNTH_MODEL` in `.env` / Render.
 - Talk to it: `python3 scripts/voice_room.py` (needs `GEMINI_API_KEY` in `.env`).
   Always-on: set `XLC_PUBLIC_URL`, keep the room up, then
   `bash scripts/ensure_room.sh --dm` or `python3 scripts/voice_room.py --dm-only`
