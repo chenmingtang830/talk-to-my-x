@@ -16,12 +16,26 @@ Native **Python 3** only (no Docker).
 | Branch | your deploy branch |
 | Region | closest to you |
 | Root Directory | *(leave empty)* |
-| Build Command | `true` *(no pip deps; stdlib only)* |
+| Build Command | see **Build (xurl)** below |
 | Start Command | `python3 scripts/voice_room.py --share` |
 | Instance | **Starter** or higher *(avoid Free — sleeps, no persistent disk)* |
 | Health check path | `/health` |
 
-4. **Environment:**
+### Build (xurl)
+
+Install `xurl` once per deploy and put it on `PATH`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/xdevplatform/xurl/main/install.sh | bash && export PATH="$HOME/.local/bin:$PATH" && which xurl
+```
+
+Render’s build shell `HOME` is ephemeral; the **runtime** process needs tokens on the Disk (see env below). If the install script puts the binary under `~/.local/bin`, either:
+
+- set env `XLC_XURL_BIN` to that path after checking Shell (`which xurl`), or
+- extend Start Command:  
+  `export PATH="$HOME/.local/bin:$PATH"; python3 scripts/voice_room.py --share`
+
+### Environment
 
 | Key | Value |
 | --- | --- |
@@ -29,19 +43,75 @@ Native **Python 3** only (no Docker).
 | `XLC_NO_BROWSER` | `1` |
 | `XLC_TUNNEL_MODE` | `none` |
 | `XLC_DATA_DIR` | `/var/data` |
+| `HOME` | `/var/data/home` |
 | `XLC_PUBLIC_URL` | `https://<your-service>.onrender.com` *(after first deploy)* |
+| `XLC_XURL_BIN` | *(optional)* absolute path to `xurl` if not on PATH |
+| `XLC_XURL_APP` | *(optional)* `xurl` app name if not the default |
+| `XLC_ROOM_TOKEN` | *(optional)* gate `/config`, generate, publish, etc. |
 
-5. **Disk** (Starter+): left nav **Disk** → create disk, mount path **`/var/data`**, ≥1 GB.
-   If you set `XLC_DATA_DIR=/var/data` **without** a mounted disk, boot used to crash
-   with `Permission denied: '/var/data'`. Current code falls back to repo-local dirs,
-   but sessions won't survive redeploys until the disk is attached.
+`HOME=/var/data/home` keeps `~/.xurl` on the persistent disk across redeploys.
+
+### Disk
+
+Starter+: left nav **Disk** → create disk, mount path **`/var/data`**, ≥1 GB.
+
+If you set `XLC_DATA_DIR=/var/data` **without** a mounted disk, the room falls back to
+repo-local dirs (sessions won’t survive redeploys).
+
+Layout under the disk (see also `local-layout.md`):
+
+```
+/var/data/
+  sessions/   drafts/   briefs/   bundles/   .state/
+  home/.xurl/          # when HOME=/var/data/home
+```
 
 6. Deploy → open `https://<service>.onrender.com/health`.
+
+## One-time: authenticate xurl (Render Shell)
+
+Do this in the Render **Shell** tab — never paste client secrets into chat.
+
+1. Ensure `HOME` is the disk home (same as env), and `xurl` is on PATH / `XLC_XURL_BIN`.
+2. Register the X developer app (once):
+
+```bash
+mkdir -p "$HOME"
+xurl auth apps add <your-app-name> \
+  --client-id '…' \
+  --client-secret '…' \
+  --api-key '…' \
+  --api-secret '…'
+```
+
+3. Headless OAuth2 (browser isn’t on the server — paste the redirect URL when prompted):
+
+```bash
+xurl auth oauth2 --headless --app <your-app-name>
+```
+
+4. For **Publish to X**, you usually also need OAuth1 with write:
+
+```bash
+xurl auth oauth1 --app <your-app-name>
+```
+
+5. Smoke:
+
+```bash
+python3 scripts/x_tools.py check
+python3 scripts/x_tools.py bookmarks 3
+```
+
+Tokens live under `$HOME/.xurl` on the disk.
 
 ## After it’s up
 
 - Phone: open the Render HTTPS URL → Start.
-- Optional later: a separate **Cron Job** to regenerate briefs / DM the same URL.
-- `xurl` on Render is optional; room + Gemini need only `GEMINI_API_KEY`.
+- **Generate today’s brief** in the room UI (or `POST /brief/generate`, or  
+  `python3 scripts/generate_brief.py`) — needs xurl + bookmarks + `GEMINI_API_KEY`.
+- Until you generate once, the room serves `assets/sample-brief.md` (badge: **Sample brief**).
+- Sessions / drafts / briefs persist on the Disk; use the **Drafts library** dropdown to reopen Synthesize drafts.
+- Optional later: Cron Job to run `generate_brief.py` + `ensure_room.sh --dm` against `XLC_PUBLIC_URL`.
 
-See also `local-layout.md` for what lands under `/var/data`.
+See also `local-layout.md` and `TESTING.md` (Render section).

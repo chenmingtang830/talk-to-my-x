@@ -13,6 +13,8 @@ It:
   - serves the static UI in ../web
   - GET /config  mints a short-lived Gemini ephemeral token (never the real key)
   - GET /brief   returns the briefing script + structured grounding (items/sources)
+  - POST /brief/generate  regenerate brief from new bookmarks (token-gated)
+  - GET /drafts  list post drafts; GET /draft?id= load one
   - GET/POST /tool, /tools, /session(s), /synthesize  in-call + thread APIs
 
 Modes:
@@ -44,6 +46,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import x_tools  # noqa: E402 (local module, after sys.path setup)
 import publish as publish_mod  # noqa: E402
 import bundle_tools as bundle_mod  # noqa: E402
+import generate_brief as generate_brief_mod  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB_DIR = ROOT / "web"
@@ -84,9 +87,21 @@ def apply_data_dir() -> None:
     BRIEFS_DIR = base / "briefs"
     for d in (SESSIONS_DIR, DRAFTS_DIR, BUNDLES_DIR, BRIEFS_DIR):
         d.mkdir(parents=True, exist_ok=True)
-    # Keep publish / bundle helpers on the same volume.
+    # Keep publish / bundle helpers / bookmark seen-state on the same volume.
     publish_mod.DRAFTS_DIR = DRAFTS_DIR
     bundle_mod.BUNDLES_DIR = BUNDLES_DIR
+    x_tools.apply_state_dir(base)
+    # Prefer HOME under the disk so ~/.xurl survives redeploys (Render).
+    home = base / "home"
+    try:
+        home.mkdir(parents=True, exist_ok=True)
+        if not (os.environ.get("HOME") or "").startswith(str(base)):
+            # Only tip if operator forgot HOME=; do not override a deliberate HOME.
+            sys.stderr.write(
+                f"[X-LiveCast] Tip: set HOME={home} so xurl tokens persist on the disk.\n"
+            )
+    except OSError:
+        pass
     sys.stderr.write(f"[X-LiveCast] Runtime data dir: {base}\n")
 
 # Constrained endpoint required for ephemeral-token auth (v1alpha only).
@@ -169,21 +184,22 @@ def require_room_token(handler: BaseHTTPRequestHandler) -> bool:
 
 
 def read_brief_full() -> dict:
-    """Return the brief as {text, title, items}. `items` is the structured
-    grounding data (topic/summary/sources with real links, when the generator
-    provided it) — the live model is given this alongside the spoken script so
-    follow-up questions can be answered from the exact source, instead of
-    falling back to a broad re-search. Empty `items` for plain-text briefs.
+    """Return the brief as {text, title, items, source}.
+
+    `source` is `live` for briefs/latest.json (bookmark-generated), `sample`
+    for assets/sample-brief.md, or `file` for XLC_BRIEF_FILE. `items` is
+    structured grounding when the generator provided it.
     """
-    candidates = []
+    candidates: list[tuple[Path, str]] = []
     explicit = os.environ.get("XLC_BRIEF_FILE", "").strip()
     if explicit:
-        candidates.append(Path(explicit))
-    candidates.append(BRIEFS_DIR / "latest.json")
-    candidates.append(ROOT / "briefs" / "latest.json")
-    candidates.append(ASSETS_DIR / "sample-brief.md")
+        candidates.append((Path(explicit), "file"))
+    candidates.append((BRIEFS_DIR / "latest.json", "live"))
+    if BRIEFS_DIR.resolve() != (ROOT / "briefs").resolve():
+        candidates.append((ROOT / "briefs" / "latest.json", "live"))
+    candidates.append((ASSETS_DIR / "sample-brief.md", "sample"))
 
-    for path in candidates:
+    for path, source in candidates:
         if not path.exists():
             continue
         text = path.read_text(encoding="utf-8")
@@ -196,13 +212,50 @@ def read_brief_full() -> dict:
                 "text": (data.get("script") or data.get("text") or "").strip(),
                 "title": data.get("title"),
                 "items": data.get("items") or [],
+                "source": source,
+                "generated_at": data.get("generated_at"),
             }
-        return {"text": text.strip(), "title": None, "items": []}
+        return {
+            "text": text.strip(),
+            "title": None,
+            "items": [],
+            "source": source,
+            "generated_at": None,
+        }
     return {
         "text": "Good morning! Your briefing content is not configured yet.",
         "title": None,
         "items": [],
+        "source": "none",
+        "generated_at": None,
     }
+
+
+def list_drafts(limit: int = 30) -> list[dict]:
+    """Newest-first draft summaries for the drafts library."""
+    DRAFTS_DIR.mkdir(exist_ok=True)
+    rows = []
+    for path in DRAFTS_DIR.glob("*.json"):
+        if path.name == "latest.json":
+            continue
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        text = (data.get("text") or "").strip()
+        if not text and isinstance(data.get("thread"), list):
+            text = " ".join(str(p) for p in data["thread"] if p).strip()
+        preview = (text.split("\n")[0] if text else "")[:100]
+        rows.append({
+            "id": data.get("id") or path.stem,
+            "generated_at": data.get("generated_at") or data.get("created_at"),
+            "published_at": data.get("published_at"),
+            "published": bool(data.get("published_at") or data.get("tweet_ids")),
+            "preview": preview,
+            "session_id": data.get("session_id"),
+        })
+    rows.sort(key=lambda r: r.get("generated_at") or "", reverse=True)
+    return rows[: max(1, min(int(limit), 100))]
 
 
 def save_session(payload: dict) -> Path:
@@ -608,6 +661,12 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json(500, {"error": str(exc)})
             return
 
+        if route == "/drafts":
+            if not require_room_token(self):
+                return
+            self._send_json(200, {"drafts": list_drafts()})
+            return
+
         if route == "/bundle":
             if not require_room_token(self):
                 return
@@ -692,6 +751,35 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 draft = synthesize_draft(sid)
                 self._send_json(200, {"draft": draft})
+            except error.HTTPError as exc:
+                detail = exc.read().decode("utf-8", "replace")
+                self._send_json(exc.code, {"error": "gemini_error", "detail": detail})
+            except Exception as exc:  # noqa: BLE001
+                self._send_json(500, {"error": str(exc)})
+            return
+
+        if route == "/brief/generate":
+            if not require_room_token(self):
+                return
+            limit = payload.get("limit", 25)
+            try:
+                limit = int(limit)
+            except (TypeError, ValueError):
+                limit = 25
+            try:
+                # Keep generate_brief on the same volume as the room's BRIEFS_DIR.
+                if BRIEFS_DIR.resolve() != (ROOT / "briefs").resolve():
+                    os.environ["XLC_DATA_DIR"] = str(BRIEFS_DIR.parent)
+                result = generate_brief_mod.generate_brief(bookmark_limit=limit)
+                brief = read_brief_full()
+                self._send_json(200, {
+                    "ok": True,
+                    "brief": brief,
+                    "title": result.get("title"),
+                    "new_bookmarks": result.get("_new_bookmark_count"),
+                    "marked_seen": result.get("_marked_seen"),
+                    "saved": result.get("_saved"),
+                })
             except error.HTTPError as exc:
                 detail = exc.read().decode("utf-8", "replace")
                 self._send_json(exc.code, {"error": "gemini_error", "detail": detail})

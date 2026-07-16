@@ -167,8 +167,11 @@ during the live call — it happens in the outer agent (Phase D) with confirmati
 
 ## Generating a daily brief (recipe for the harness)
 
-This is not a script — it's a task the agent harness runs (on demand or via
-cron). When the user asks for a brief (or on schedule), do the following:
+**Scripted path (cloud / room UI):** `python3 scripts/generate_brief.py` or the
+room’s **Generate today’s brief** button (`POST /brief/generate`) — same recipe
+(prompt + memory + `bookmarks-new` → Gemini → `briefs/latest.json` + `mark-seen`).
+
+**Harness path:** when the agent runs this on demand or via cron, do the following:
 
 1. **Read `prompt.md`** in the skill root — it defines the user's topics,
    accounts, tone, length, and which sources to pull. Treat it as instructions.
@@ -331,4 +334,7 @@ See `references/config.example.md` and `.env.example`. Key settings:
       light `memory/` scaffold)
 - [x] D. Review + confirmed publish UI / `POST /publish` + threaded `xurl` posting
 - [x] E. Feed bundle export/import (`bundle_tools` CLI; host-side, not room UI)
-- [ ] Later: richer evolving memory, ClawHub packaging polish
+- [x] F. Cloud product loop (Render Disk + xurl, `generate_brief` / `POST /brief/generate`,
+      room **Generate today’s brief**, drafts library `GET /drafts`)
+- [ ] Next: Hermes-lite evolving `memory/USER.md` + `memory/TASTE.md` (approval-gated)
+- [ ] Later: ClawHub packaging polish

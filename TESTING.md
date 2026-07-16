@@ -48,15 +48,29 @@ See `references/always-on.setup.md`.
 ## Regression / safety
 
 - [x] `GET /health` works without room token.
-- [ ] With token on: `/config`, `/publish`, `/bundle`, `/session(s)`, `/tool`, `/synthesize` require token.
+- [ ] With token on: `/config`, `/publish`, `/bundle`, `/session(s)`, `/draft(s)`, `/tool`, `/synthesize`, `/brief/generate` require token.
 - [x] `git status` does not stage `.env` (`.gitignore` covers it).
 - [x] Links in README / SKILL to `references/always-on.setup.md` and `TESTING.md` resolve.
+
+## Render / cloud (Mode A)
+
+See `references/render.setup.md`.
+
+- [ ] `GET $XLC_PUBLIC_URL/health` → `ok` + public URL.
+- [ ] Disk mounted at `/var/data`; env has `XLC_DATA_DIR`, `HOME=/var/data/home`, `XLC_TUNNEL_MODE=none`.
+- [ ] Build installed `xurl`; Shell: `python3 scripts/x_tools.py check` shows a binary path.
+- [ ] Room UI badge is **Sample brief** until generate; after **Generate today’s brief** → **Live · bookmarks** and `briefs/latest.json` on the disk.
+- [ ] Session dropdown lists prior threads with title · time; **New** works from idle and mid-call.
+- [ ] **Drafts library** lists Synthesize drafts; selecting one loads the draft panel.
+- [ ] In-room tool call works (ask about a post / bookmark) once xurl is authed.
+- [ ] With `XLC_ROOM_TOKEN`: `POST /brief/generate` without token → 401.
 
 ## Smoke commands
 
 ```bash
-python3 -m py_compile scripts/voice_room.py scripts/publish.py scripts/bundle_tools.py scripts/x_tools.py
+python3 -m py_compile scripts/voice_room.py scripts/publish.py scripts/bundle_tools.py scripts/x_tools.py scripts/generate_brief.py
 python3 scripts/bundle_tools.py export
 python3 scripts/publish.py publish          # should refuse without --confirm
+python3 scripts/x_tools.py check
 bash scripts/ensure_room.sh --help
 ```

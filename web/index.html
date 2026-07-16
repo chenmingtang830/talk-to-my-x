@@ -29,6 +29,12 @@
       <button id="newThreadBtn" class="btn-mini" type="button">New</button>
     </div>
 
+    <div class="library-bar">
+      <select id="draftSelect" class="thread-select" aria-label="Post drafts">
+        <option value="">Drafts library</option>
+      </select>
+    </div>
+
     <div class="call-controls">
       <button id="playBtn" class="call-btn" title="Start or pause">
         <span class="call-btn__icon" id="playIcon">▶</span>
@@ -60,8 +66,15 @@
       <button id="synthBtn" class="btn btn--primary" disabled>Synthesize</button>
     </footer>
 
-    <details class="brief" id="briefPanel">
-      <summary>Today's brief (preview)</summary>
+    <details class="brief" id="briefPanel" open>
+      <summary>
+        Today's brief (preview)
+        <span id="briefSource" class="brief__badge">…</span>
+      </summary>
+      <div class="brief__toolbar">
+        <button id="generateBriefBtn" class="btn-mini btn-mini--accent" type="button">Generate today's brief</button>
+        <span id="briefToast" class="brief__toast" aria-live="polite"></span>
+      </div>
       <pre id="briefText" class="brief__text">Loading…</pre>
     </details>
   </main>

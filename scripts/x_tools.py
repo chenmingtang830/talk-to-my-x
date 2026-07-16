@@ -482,6 +482,23 @@ _STATE_DIR = ROOT_DIR / ".state"
 _SEEN_PATH = _STATE_DIR / "seen.json"
 
 
+def apply_state_dir(base: Path | None = None) -> Path:
+    """Point seen-bookmark state at a persistent volume (e.g. XLC_DATA_DIR)."""
+    global _STATE_DIR, _SEEN_PATH
+    if base is None:
+        raw = (os.environ.get("XLC_DATA_DIR") or "").strip()
+        base = Path(raw) if raw else ROOT_DIR
+    state = Path(base) / ".state"
+    try:
+        state.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        state = ROOT_DIR / ".state"
+        state.mkdir(parents=True, exist_ok=True)
+    _STATE_DIR = state
+    _SEEN_PATH = state / "seen.json"
+    return state
+
+
 def load_seen() -> dict:
     if not _SEEN_PATH.exists():
         return {}
@@ -551,10 +568,14 @@ def _cli(argv: list[str]) -> int:
         return 2
     cmd = argv[0]
     if cmd == "check":
+        apply_state_dir()
         print(json.dumps({
             "xurl_bin": xurl_bin(),
+            "seen_path": str(_SEEN_PATH),
             "seen": {k: len(v) for k, v in load_seen().items()},
-        }))
+            "home": os.environ.get("HOME"),
+            "xlc_data_dir": os.environ.get("XLC_DATA_DIR") or None,
+        }, indent=2))
         return 0
     if cmd == "search":
         query = argv[1] if len(argv) > 1 else ""

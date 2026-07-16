@@ -16,10 +16,14 @@ const els = {
   captions: document.getElementById("captions"),
   briefPanel: document.getElementById("briefPanel"),
   briefText: document.getElementById("briefText"),
+  briefSource: document.getElementById("briefSource"),
+  briefToast: document.getElementById("briefToast"),
+  generateBriefBtn: document.getElementById("generateBriefBtn"),
   muteBtn: document.getElementById("muteBtn"),
   hangupBtn: document.getElementById("hangupBtn"),
   synthBtn: document.getElementById("synthBtn"),
   sessionSelect: document.getElementById("sessionSelect"),
+  draftSelect: document.getElementById("draftSelect"),
   newThreadBtn: document.getElementById("newThreadBtn"),
   draftPanel: document.getElementById("draftPanel"),
   draftText: document.getElementById("draftText"),
@@ -66,6 +70,7 @@ const state = {
   roomToken: "", // from ?token= when XLC_ROOM_TOKEN is set on the host
   draftId: null,
   draftObj: null,
+  briefSource: "", // live | sample | file | none
 };
 
 // Optional room gate: host sets XLC_ROOM_TOKEN; share URL as https://host/?token=...
@@ -133,8 +138,59 @@ function setPhase(phase) {
   els.hangupBtn.disabled = !onCall;
   els.synthBtn.disabled = !(hasThread || phase === "hungup");
   els.sessionSelect.disabled = onCall || phase === "connecting";
+  if (els.draftSelect) els.draftSelect.disabled = onCall || phase === "connecting";
   // Allow New during a live/paused call (it hangs up + resets). Only block while connecting.
   els.newThreadBtn.disabled = phase === "connecting";
+  // Generate brief only when not mid-call.
+  if (els.generateBriefBtn) {
+    els.generateBriefBtn.disabled = onCall || phase === "connecting";
+  }
+}
+
+function applyBriefPayload(b) {
+  state.brief = (b && b.text) || "";
+  state.briefItems = (b && b.items) || [];
+  state.briefTitle = (b && b.title) || "";
+  state.briefSource = (b && b.source) || "";
+  if (els.briefText) els.briefText.textContent = state.brief || "(no brief)";
+  updateBriefBadge();
+}
+
+function updateBriefBadge() {
+  if (!els.briefSource) return;
+  const src = state.briefSource || "";
+  let label = "…";
+  let cls = "brief__badge";
+  if (src === "live") {
+    label = "Live · bookmarks";
+    cls += " is-live";
+  } else if (src === "sample") {
+    label = "Sample brief";
+    cls += " is-sample";
+  } else if (src === "file") {
+    label = "Custom file";
+  } else if (src === "none") {
+    label = "No brief";
+  }
+  els.briefSource.textContent = label;
+  els.briefSource.className = cls;
+}
+
+function setBriefToast(msg, isError) {
+  if (!els.briefToast) return;
+  els.briefToast.textContent = msg || "";
+  els.briefToast.classList.toggle("is-error", !!isError);
+}
+
+function formatSessionLabel(s) {
+  const title = (s.title || s.id || "Session").trim();
+  const when = (s.updated_at || s.started_at || "").replace("T", " ").replace("Z", "").slice(0, 16);
+  const n = typeof s.event_count === "number" ? s.event_count : null;
+  const parts = [title];
+  if (when) parts.push(when);
+  if (n != null) parts.push(`${n} turns`);
+  if (s.has_draft) parts.push("draft");
+  return parts.join(" · ");
 }
 
 // ---------- PCM helpers ----------
@@ -1037,12 +1093,70 @@ async function refreshSessionList(selectId) {
     for (const s of sessions) {
       const opt = document.createElement("option");
       opt.value = s.id;
-      const when = (s.updated_at || s.started_at || "").replace("T", " ").slice(0, 16);
-      opt.textContent = `${s.title || s.id}${when ? " · " + when : ""}`;
+      opt.textContent = formatSessionLabel(s);
       els.sessionSelect.appendChild(opt);
     }
     els.sessionSelect.value = cur;
   } catch (_) { /* ignore */ }
+}
+
+async function refreshDraftList(selectId) {
+  if (!els.draftSelect) return;
+  try {
+    const r = await apiFetch("/drafts");
+    const j = await r.json();
+    const drafts = j.drafts || [];
+    const cur = selectId || state.draftId || "";
+    els.draftSelect.innerHTML = "";
+    const opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = drafts.length ? "Drafts library" : "No drafts yet";
+    els.draftSelect.appendChild(opt0);
+    for (const d of drafts) {
+      const opt = document.createElement("option");
+      opt.value = d.id;
+      const when = (d.generated_at || "").replace("T", " ").replace("Z", "").slice(0, 16);
+      const pub = d.published ? " · published" : "";
+      const prev = (d.preview || "").slice(0, 42);
+      opt.textContent = `${when || d.id}${pub}${prev ? " — " + prev : ""}`;
+      els.draftSelect.appendChild(opt);
+    }
+    if (cur) els.draftSelect.value = cur;
+  } catch (_) { /* ignore */ }
+}
+
+async function loadDraftById(draftId) {
+  if (!draftId) return;
+  const r = await apiFetch(`/draft?id=${encodeURIComponent(draftId)}`);
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+  showDraft(j);
+  refreshDraftList(j.id || draftId);
+}
+
+async function generateTodayBrief() {
+  if (!els.generateBriefBtn) return;
+  els.generateBriefBtn.disabled = true;
+  els.generateBriefBtn.textContent = "Generating…";
+  setBriefToast("Pulling new bookmarks…");
+  try {
+    const r = await apiFetch("/brief/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.detail || j.error || `HTTP ${r.status}`);
+    applyBriefPayload(j.brief || {});
+    const n = j.new_bookmarks != null ? j.new_bookmarks : "?";
+    setBriefToast(`Ready — ${n} new bookmark(s). Tap Start to listen.`);
+    els.briefPanel.open = true;
+  } catch (err) {
+    setBriefToast(err.message || String(err), true);
+  } finally {
+    els.generateBriefBtn.textContent = "Generate today's brief";
+    setPhase(state.phase);
+  }
 }
 
 async function loadThread(sessionId) {
@@ -1150,11 +1264,11 @@ async function start() {
     state.voice = config.voice || "Puck";
     // Keep brief from the loaded thread if present; otherwise take today's.
     if (!resuming || !state.brief) {
-      state.brief = brief.text || "";
-      state.briefItems = brief.items || [];
-      state.briefTitle = brief.title || "";
+      applyBriefPayload(brief);
+    } else {
+      els.briefText.textContent = state.brief || "(no brief)";
+      updateBriefBadge();
     }
-    els.briefText.textContent = state.brief || "(no brief)";
 
     els.playHint.textContent = "Connecting to Gemini…";
     const url = `${config.wsBase}?access_token=${encodeURIComponent(config.token)}`;
@@ -1299,6 +1413,7 @@ async function synthesize() {
     const j = await r.json();
     if (!r.ok) throw new Error(j.detail || j.error || `HTTP ${r.status}`);
     showDraft(j.draft);
+    refreshDraftList(j.draft && j.draft.id);
   } catch (err) {
     showError("Synthesize failed: " + (err.message || err));
   } finally {
@@ -1357,6 +1472,11 @@ els.muteBtn.addEventListener("click", toggleMute);
 els.hangupBtn.addEventListener("click", hangUp);
 els.synthBtn.addEventListener("click", synthesize);
 els.publishBtn.addEventListener("click", publishDraft);
+if (els.generateBriefBtn) {
+  els.generateBriefBtn.addEventListener("click", () => {
+    generateTodayBrief().catch((err) => setBriefToast(err.message || String(err), true));
+  });
+}
 els.newThreadBtn.addEventListener("click", () => {
   hangUpLiveOnly();
   resetToNewThread();
@@ -1365,6 +1485,13 @@ els.sessionSelect.addEventListener("change", () => {
   const id = els.sessionSelect.value;
   loadThread(id).catch((err) => showError(err.message || String(err)));
 });
+if (els.draftSelect) {
+  els.draftSelect.addEventListener("change", () => {
+    const id = els.draftSelect.value;
+    if (!id) return;
+    loadDraftById(id).catch((err) => showError(err.message || String(err)));
+  });
+}
 els.copyDraftBtn.addEventListener("click", async () => {
   const text = els.draftText.value || "";
   try {
@@ -1378,11 +1505,9 @@ els.copyDraftBtn.addEventListener("click", async () => {
 
 setPhase("idle");
 refreshSessionList();
+refreshDraftList();
 
 // Preload the brief so the panel shows content before starting.
 apiFetch("/brief").then((r) => r.json()).then((b) => {
-  state.brief = b.text || "";
-  state.briefItems = b.items || [];
-  state.briefTitle = b.title || "";
-  els.briefText.textContent = state.brief || "(no brief)";
+  applyBriefPayload(b);
 }).catch(() => {});

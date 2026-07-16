@@ -8,10 +8,11 @@ voice room).
 
 Quick facts for the agent:
 
-- Generate a brief: follow the "Generating a daily brief" recipe in `SKILL.md` —
+- Generate a brief: `python3 scripts/generate_brief.py`, room **Generate today’s
+  brief** (`POST /brief/generate`), or the harness recipe in `SKILL.md` —
   read `prompt.md` (and optional `memory/USER.md` / `memory/TASTE.md`), pull X
   data (X MCP or `scripts/x_tools.py`), write `briefs/latest.json` (schema:
-  `references/brief.schema.example.json`).
+  `references/brief.schema.example.json`). Cloud: `references/render.setup.md`.
 - Talk to it: `python3 scripts/voice_room.py` (needs `GEMINI_API_KEY` in `.env`).
   Always-on: set `XLC_PUBLIC_URL`, keep the room up, then
   `bash scripts/ensure_room.sh --dm` or `python3 scripts/voice_room.py --dm-only`
