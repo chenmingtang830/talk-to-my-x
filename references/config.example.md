@@ -7,11 +7,32 @@ file in the skill root). Copy `.env.example` to `.env` and edit.
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | (required) | Free key from https://aistudio.google.com/apikey. Used only locally. |
-| `XLC_PORT` | `8787` | Port for the local voice-room server. |
+| `GEMINI_API_KEY` | (required) | Free key from https://aistudio.google.com/apikey. Used only on the host. |
+| `XLC_PORT` | `8787` | Port for the voice-room server. |
 | `XLC_GEMINI_MODEL` | `gemini-3.1-flash-live-preview` | Latest Live audio-to-audio model. |
 | `XLC_GEMINI_VOICE` | `Puck` | Prebuilt voice: Puck, Charon, Kore, Fenrir, Aoede. |
 | `XLC_BRIEF_FILE` | (unset) | Path to a generated brief `.json`. Falls back to `assets/sample-brief.md`. |
+| `XLC_PUBLIC_URL` | (unset) | Evergreen HTTPS origin (always-on). |
+| `XLC_TUNNEL_MODE` | see above | `named` \| `quick` \| `none`. |
+| `XLC_ROOM_TOKEN` | (unset) | Optional API gate for the shared room. |
+| `XLC_SYNTH_MODEL` | `gemini-2.5-flash` | Text model for Synthesize / recap. |
+| `XLC_NO_BROWSER` | (unset) | Set `1` to skip opening a browser on local-only starts. |
+
+## Publishing (confirm required)
+
+`POST /publish` with `{"confirm": true, ...}` or
+`python3 scripts/publish.py publish --confirm`. Without confirm, the server
+refuses. Thread posts use `reply.in_reply_to_tweet_id`. See SKILL.md
+“Publishing a draft (confirmed)” and `TESTING.md`.
+
+## Feed bundles
+
+`python3 scripts/bundle_tools.py export|import` — schema in
+`references/bundle.schema.example.json`. Host/CLI only (not exposed in the room UI).
+
+## Always-on
+
+Step-by-step: [`always-on.setup.md`](always-on.setup.md).
 
 Live (audio-to-audio) models, latest first: `gemini-3.1-flash-live-preview`,
 then `gemini-2.5-flash-live-preview`. Note `gemini-2.0-flash-live-001` is shut
@@ -46,19 +67,33 @@ Gemini **ephemeral token** per session and returns that instead:
 This is on by default (not just for sharing) — it's free and strictly safer,
 and it's required anyway once the room can be reached off the local machine.
 
-## Sharing: tunnel + DM (`--share`, `--dm`)
+## Sharing: always-on URL (primary) vs quick tunnel (demo)
 
-`python3 scripts/voice_room.py --share` starts a temporary public HTTPS tunnel
-via `cloudflared tunnel --url http://localhost:PORT` (no account needed; dies
-when the process stops). `--dm` additionally sends yourself an X DM with that
-link via `xurl -X POST /2/dm_conversations/with/<your_user_id>/messages`.
+**Primary:** set `XLC_PUBLIC_URL` to an evergreen HTTPS origin (named Cloudflare
+tunnel or reverse proxy) that fronts `XLC_PORT`. Keep the room process up on the
+host. Daily cron DMs that **same** URL after regenerating the brief:
+
+```bash
+bash scripts/ensure_room.sh --dm
+python3 scripts/voice_room.py --dm-only
+```
+
+| Variable | Default | Notes |
+| --- | --- | --- |
+| `XLC_PUBLIC_URL` | (unset) | Evergreen HTTPS origin used in DMs and `/health` checks. |
+| `XLC_TUNNEL_MODE` | `named` if public URL else `quick` | `named` = don't start cloudflared; `quick` = demo trycloudflare; `none` = bind only. |
+| `XLC_ROOM_TOKEN` | (unset) | If set, gates `/config`, `/tool`, `/session(s)`, `/synthesize`, `/draft`, `/publish`, `/bundle`. Pass `X-XLC-Token` or `?token=`. DM helper appends the token to the shared URL. |
+| `XLC_NO_BROWSER` | (unset) | Set `1` to skip opening a browser on local-only starts. |
+
+`GET /health` is ungated and returns `{ok, publicUrl}` for `ensure_room.sh`.
+
+**Demo:** `python3 scripts/voice_room.py --share --dm` with `XLC_TUNNEL_MODE=quick`
+(or no `XLC_PUBLIC_URL`) starts a temporary `cloudflared` quick tunnel. The link
+dies when the process stops. Requires `brew install cloudflared`.
 
 Mobile browsers require a **secure context** (HTTPS or localhost) for
 microphone access — a plain LAN IP over HTTP will not get mic permission on a
-phone, so the tunnel (HTTPS) is required for real mobile use, not just a
-convenience.
-
-Requires: `brew install cloudflared`, and `xurl` authenticated for `--dm`.
+phone.
 
 ### Known limitation: some networks block `*.trycloudflare.com`
 
@@ -74,11 +109,9 @@ Workarounds, roughly in order of effort:
 - Temporarily disable any custom/private DNS app or "Private DNS" setting on
   the phone (Settings → often under VPN/DNS).
 - Try a different browser.
-- For a more permanent fix: use a **named Cloudflare Tunnel bound to your own
-  domain** instead of a quick tunnel (requires a Cloudflare account + a domain
-  you own) — a real, stable domain is far less likely to be filtered than a
-  random `trycloudflare.com` subdomain. Not implemented yet; quick tunnels
-  cover the common case.
+- **Preferred permanent fix:** named Cloudflare Tunnel (or any reverse proxy)
+  bound to your own domain → set `XLC_PUBLIC_URL`. That is the always-on path
+  this skill is designed around.
 
 ## Costs: who bills what
 

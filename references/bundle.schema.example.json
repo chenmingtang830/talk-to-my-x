@@ -1,0 +1,19 @@
+{
+  "_comment": "Schema + example for bundles/latest.json. Export via scripts/bundle_tools.py export. Import replaces prompt.md (with .bak) and optionally memory/TASTE.md.",
+  "version": 1,
+  "id": "20260709T120000Z",
+  "exported_at": "2026-07-09T12:00:00Z",
+  "name": "My X-LiveCast feed",
+  "description": "Portable feed preferences for X-LiveCast (prompt + optional taste).",
+  "prompt_markdown": "# My X-LiveCast brief prompt\n\n## Focus\n\nTopics I care about:\n- AI / LLMs / voice agents\n\nAccounts worth extra attention:\n- @example\n\n## Sources to pull\n\n- My bookmarks (primary)\n\n## Style\n\n- Length: ~60–90 seconds\n- Tone: friendly, sharp\n",
+  "focus": {
+    "topics": ["AI / LLMs / voice agents"],
+    "accounts": ["@example"],
+    "ignore": []
+  },
+  "sources_markdown": "- My bookmarks (primary)",
+  "style_markdown": "- Length: ~60–90 seconds\n- Tone: friendly, sharp",
+  "notes_markdown": "",
+  "style_bullets": ["Length: ~60–90 seconds", "Tone: friendly, sharp"],
+  "taste_markdown": "# TASTE\n\n- Tone: punchy\n"
+}

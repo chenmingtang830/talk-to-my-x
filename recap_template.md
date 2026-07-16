@@ -1,56 +1,67 @@
 # My recap draft template
 
-This file is **yours to edit**. It tells the agent how to turn a finished voice
-session (`sessions/latest.json`) into something shareable. Unlike the brief
-(`prompt.md`), there's no fixed shape here — it really depends on the session:
-sometimes a single quick post is right, sometimes a full thread with sources.
-Let the content decide; use this file to describe your taste and defaults.
+This file is **yours to edit**. It turns a finished voice session into something
+I'd actually post — not a generic AI summary.
 
 ---
 
-## What the source material is
+## The job (in order)
 
-Not just "a summary of posts." The full value is in **my participation**: what
-I chose to dig into, the questions I actually asked, what the host found when I
-asked it to look something up, and what I took away. Use all of it:
+Write as **me**, first person. The post is about **my session**, not a press
+recap of other people's tweets.
 
-- The original brief text.
-- The full back-and-forth (what I asked, what the host said).
-- Every tool call result (posts the host actually looked up while we talked) —
-  these have real links; use them as sources, don't paraphrase without a link
-  when a specific post is being referenced.
+1. **What I dug into** — which posts/topics from the brief I actually spent time
+   on (not the whole brief).
+2. **What I asked / pushed on** — the questions or angles I brought. Smooth messy
+   voice transcripts into clean narration; don't quote awkward ASR literally.
+3. **My takeaway** — only what I actually concluded or reacted to in the
+   conversation. If I didn't say a takeaway, don't invent one; end on the
+   concrete finding instead.
 
-## Decide the shape, don't force one
+## Links are mandatory
 
-- If the session was short / one clear thread of thought → **a single post**.
-  Something like: "Did my X-LiveCast run this morning — went deep on
-  [topic]. Turns out [key point]. Sources: [links]."
-- If we covered multiple distinct things, or I dug into several posts →
-  **a thread**. First post = the hook / what this is. Each following post =
-  one thing we discussed: the source (linked), what I asked or noticed, my
-  takeaway. Keep each post under ~260 characters.
-- If it was mostly me listening with no real interrogation → keep it minimal,
-  don't manufacture a takeaway that wasn't actually said.
+Every specific post you reference must include its full URL inline in the
+post text, e.g. `https://x.com/<author>/status/<id>`.
 
-## Voice
+Prefer links from:
+- `AVAILABLE SOURCE LINKS` / brief grounding in the session payload
+- `[tool]` results (`get_post`, `search_x`, etc.)
 
-- First person, casual, like I'm telling a friend what I found interesting —
-  not a press release, not a listicle.
-- It's OK to have opinions if I expressed one in the conversation. Don't invent
-  ones I didn't.
-- Always link the actual source post when referencing something specific
-  (use the `id`/`author` from the tool_call results to build the link:
-  `https://x.com/<author>/status/<id>`).
+No bare name-drops without a URL. If you can't find a URL for something, omit
+that claim rather than hand-wave.
+
+Also fill `sources: [{id, author, url}, ...]` for every link you used.
+
+## Shape
+
+- **One clear rabbit hole** → single post (still with at least one source URL).
+- **Two+ distinct digs** → thread:
+  - Post 1: hook — “spent my LiveCast on X / Y…”
+  - Later posts: one dig each — source link + what I asked + takeaway
+  - Keep each post ≤260 characters when possible (hard max 280)
+- Mostly listened, barely asked → short post; don't fake depth.
+
+## Voice (anti-slop)
+
+Sound like a sharp friend, not LinkedIn / product marketing.
+
+**Do:** concrete nouns, numbers, tradeoffs, “I asked…”, “what clicked for me…”  
+**Don't use** empty intensifiers or AI filler, including:
+- “Super interesting / pretty eye-opening / sounds smart / really resonated”
+- “It's all about…” / “In today's fast-paced…” / “dive deep” / “game-changer”
+- Restating the same point twice with softer adjectives
+- Emoji spam or hashtags unless I used them in-session
+
+Name people by display name in prose; put the `@handle` only inside the URL path.
 
 ## What NOT to include
 
-- Don't quote my questions verbatim if they're awkward as written (voice
-  transcripts are messy) — smooth them into narration.
-- Don't include anything that sounds like debugging/meta talk ("testing the
-  tool", "let me search that") — that's not part of the story.
+- Meta / debugging (“let me search”, “testing the tool”, room UI talk)
+- Topics from the brief we never actually discussed
+- Opinions I never expressed
 
 ## Output
 
-Write the draft to `drafts/latest.json` per the schema in
-`references/draft.schema.example.json` — either a single `text`, or a `thread`
-array of post texts, plus a `sources` list of `{id, author, url}` referenced.
+JSON only, per `references/draft.schema.example.json`:
+- either `"text": "..."` or `"thread": ["...", "..."]`
+- always `"sources": [{"id","author","url"}, ...]`

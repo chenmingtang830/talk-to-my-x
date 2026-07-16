@@ -12,6 +12,8 @@ Exposed (read-only, safe to call during a live conversation):
   - get_home_timeline(limit)     your reverse-chronological home timeline
   - get_bookmarks(limit)         your bookmarked posts
   - get_user_posts(username)     a specific user's recent posts
+  - get_post(url_or_id)          open one X post (text + linked article cards)
+  - get_post_replies(url_or_id)  recent replies in that post's thread
   - read_url(url)                fetch + extract readable text from a linked
                                   page (e.g. an article a post links to)
 
@@ -33,6 +35,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -98,9 +101,10 @@ class _ReadableTextExtractor(HTMLParser):
         if self._content_depth > 0:
             self.content_parts.append(text)
 
-_TWEET_FIELDS = "created_at,author_id,public_metrics"
-_EXPANSIONS = "author_id"
+_TWEET_FIELDS = "created_at,author_id,public_metrics,entities,note_tweet,text,attachments"
+_EXPANSIONS = "author_id,attachments.media_keys,referenced_tweets.id"
 _USER_FIELDS = "username,name"
+_MEDIA_FIELDS = "type,url,preview_image_url,alt_text"
 
 
 class XToolError(Exception):
@@ -175,24 +179,177 @@ def _xurl(path: str, method: str = "GET", body: str | None = None) -> dict:
 
 
 def _format_tweets(data: dict, limit: int) -> list[dict]:
-    """Turn an X v2 tweets response into a compact list of {author, text, likes, url}."""
+    """Turn an X v2 tweets response into a compact list of posts.
+
+    Each item includes both `author` (@handle) and `name` (display name) when
+    available — the brief should speak the display name aloud.
+    """
     users = {}
     for u in (data.get("includes", {}) or {}).get("users", []):
-        users[u.get("id")] = u.get("username") or u.get("name") or "unknown"
+        users[u.get("id")] = {
+            "username": u.get("username") or "unknown",
+            "name": u.get("name") or u.get("username") or "unknown",
+        }
 
     tweets = []
     for t in (data.get("data") or [])[:limit]:
         metrics = t.get("public_metrics") or {}
         tweet_id = t.get("id")
-        author = users.get(t.get("author_id"), t.get("author_id", "unknown"))
+        user = users.get(t.get("author_id"), {})
+        author = user.get("username") or t.get("author_id", "unknown")
+        name = user.get("name") or author
         tweets.append({
             "id": tweet_id,
             "author": author,
+            "name": name,
             "text": (t.get("text") or "").replace("\n", " ").strip(),
             "likes": metrics.get("like_count", 0),
             "url": f"https://x.com/{author}/status/{tweet_id}" if tweet_id and author != "unknown" else None,
         })
     return tweets
+
+
+def _extract_tweet_id(url_or_id: str) -> str | None:
+    """Accept a bare tweet id or an x.com / twitter.com / t.co status URL."""
+    s = (url_or_id or "").strip()
+    if not s:
+        return None
+    if s.isdigit():
+        return s
+    m = re.search(r"(?:twitter\.com|x\.com)/\w+/status/(\d+)", s)
+    if m:
+        return m.group(1)
+    return None
+
+
+def _linked_urls_from_entities(tweet: dict) -> list[dict]:
+    """Pull expanded/unwound URLs (with title/description when X has them)."""
+    out = []
+    entities = tweet.get("entities") or {}
+    for u in entities.get("urls") or []:
+        item = {
+            "url": u.get("unwound_url") or u.get("expanded_url") or u.get("url"),
+            "tco": u.get("url"),
+            "title": u.get("title") or "",
+            "description": u.get("description") or "",
+        }
+        if item["url"]:
+            out.append(item)
+    return out
+
+
+def get_post_replies(url_or_id: str, limit: int = 15) -> dict:
+    """Pull recent replies in a post's conversation thread.
+
+    Uses recent search with `conversation_id:<tweet_id>` (last ~7 days). Returns
+    the root post summary plus reply texts — enough for the host to skim what
+    people are saying under a post.
+    """
+    tweet_id = _extract_tweet_id(url_or_id)
+    if not tweet_id:
+        raise XToolError("need a tweet id or an x.com/.../status/... URL")
+    limit = max(1, min(int(limit), 25))
+
+    root = None
+    try:
+        root = get_post(tweet_id)
+    except XToolError:
+        root = {"id": tweet_id, "url": f"https://x.com/i/status/{tweet_id}"}
+
+    q = quote(f"conversation_id:{tweet_id}")
+    path = (
+        f"/2/tweets/search/recent?query={q}&max_results={max(limit, 10)}"
+        f"&tweet.fields={_TWEET_FIELDS}"
+        f"&expansions={_EXPANSIONS}&user.fields={_USER_FIELDS}"
+    )
+    data = _xurl(path)
+    replies = []
+    for item in _format_tweets(data, limit + 5):
+        # Skip the root post itself if it shows up in search results.
+        if item.get("id") == tweet_id:
+            continue
+        replies.append(item)
+        if len(replies) >= limit:
+            break
+
+    return {
+        "root": {
+            "id": root.get("id"),
+            "author": root.get("author"),
+            "name": root.get("name"),
+            "text": (root.get("text") or "")[:280],
+            "url": root.get("url"),
+        },
+        "reply_count_returned": len(replies),
+        "replies": replies,
+        "note": (
+            "Recent-search window is ~7 days; older replies may be missing. "
+            "Summarize the interesting ones — don't read every reply aloud."
+        ),
+    }
+
+
+def get_post(url_or_id: str) -> dict:
+    """Open a specific X post by status URL or tweet id.
+
+    Returns the post text, author handle + display name, and any linked
+    articles X already unwound (title + description). Prefer this over
+    read_url when the user asks to open a post — x.com pages are JS shells
+    and often return nothing useful to a plain HTTP fetch.
+    """
+    tweet_id = _extract_tweet_id(url_or_id)
+    if not tweet_id:
+        raise XToolError("need a tweet id or an x.com/.../status/... URL")
+
+    path = (
+        f"/2/tweets/{tweet_id}"
+        f"?tweet.fields={_TWEET_FIELDS}"
+        f"&expansions={_EXPANSIONS}"
+        f"&user.fields={_USER_FIELDS}"
+        f"&media.fields={_MEDIA_FIELDS}"
+    )
+    data = _xurl(path)
+    tweet = data.get("data")
+    if not tweet:
+        raise XToolError(f"post {tweet_id} not found or not accessible")
+
+    users = {u.get("id"): u for u in ((data.get("includes") or {}).get("users") or [])}
+    author_u = users.get(tweet.get("author_id"), {})
+    author = author_u.get("username") or "unknown"
+    name = author_u.get("name") or author
+
+    # Prefer note_tweet (long-form) text when present.
+    note = tweet.get("note_tweet") or {}
+    text = (note.get("text") or tweet.get("text") or "").strip()
+
+    media = []
+    media_by_key = {m.get("media_key"): m for m in ((data.get("includes") or {}).get("media") or [])}
+    for key in ((tweet.get("attachments") or {}).get("media_keys") or []):
+        m = media_by_key.get(key)
+        if not m:
+            continue
+        media.append({
+            "type": m.get("type"),
+            "alt_text": m.get("alt_text") or "",
+            "url": m.get("url") or m.get("preview_image_url"),
+        })
+
+    linked = _linked_urls_from_entities(tweet)
+    metrics = tweet.get("public_metrics") or {}
+    return {
+        "id": tweet_id,
+        "author": author,
+        "name": name,
+        "text": text,
+        "likes": metrics.get("like_count", 0),
+        "url": f"https://x.com/{author}/status/{tweet_id}",
+        "linked_urls": linked,
+        "media": media,
+        "hint": (
+            "If linked_urls has a title/description, summarize from that first. "
+            "Call read_url on linked_urls[].url only if the user wants the full article body."
+        ),
+    }
 
 
 def search_x(query: str, limit: int = 10) -> dict:
@@ -241,7 +398,11 @@ def get_user_posts(username: str, limit: int = 10) -> dict:
     # _format_tweets can resolve the author name instead of falling back to id.
     for t in data.get("data") or []:
         t["author_id"] = user_id
-    data.setdefault("includes", {})["users"] = [{"id": user_id, "username": username}]
+    # Resolve display name when possible.
+    display = (who.get("data") or {}).get("name") or username
+    data.setdefault("includes", {})["users"] = [
+        {"id": user_id, "username": username, "name": display}
+    ]
     return {"username": username, "results": _format_tweets(data, limit)}
 
 
@@ -357,6 +518,11 @@ TOOLS = {
     "get_home_timeline": lambda args: get_home_timeline(args.get("limit", 10)),
     "get_bookmarks": lambda args: get_bookmarks(args.get("limit", 25)),
     "get_user_posts": lambda args: get_user_posts(args.get("username", ""), args.get("limit", 10)),
+    "get_post": lambda args: get_post(args.get("url_or_id") or args.get("url") or args.get("id") or ""),
+    "get_post_replies": lambda args: get_post_replies(
+        args.get("url_or_id") or args.get("url") or args.get("id") or "",
+        args.get("limit", 15),
+    ),
     "read_url": lambda args: read_url(args.get("url", ""), args.get("max_chars", 3000)),
 }
 
@@ -379,7 +545,7 @@ def _cli(argv: list[str]) -> int:
         print(
             "usage: x_tools.py [search QUERY [N] | timeline [N] | bookmarks [N] |"
             " bookmarks-new [N] | mark-seen SOURCE id1 id2 ... | user-posts USERNAME [N] |"
-            " read URL | check]",
+            " post URL_OR_ID | replies URL_OR_ID [N] | read URL | check]",
             file=sys.stderr,
         )
         return 2
@@ -407,6 +573,15 @@ def _cli(argv: list[str]) -> int:
         username = argv[1] if len(argv) > 1 else ""
         limit = int(argv[2]) if len(argv) > 2 else 5
         print(json.dumps(dispatch("get_user_posts", {"username": username, "limit": limit}), indent=2))
+        return 0
+    if cmd == "post":
+        url_or_id = argv[1] if len(argv) > 1 else ""
+        print(json.dumps(dispatch("get_post", {"url_or_id": url_or_id}), indent=2))
+        return 0
+    if cmd == "replies":
+        url_or_id = argv[1] if len(argv) > 1 else ""
+        limit = int(argv[2]) if len(argv) > 2 else 10
+        print(json.dumps(dispatch("get_post_replies", {"url_or_id": url_or_id, "limit": limit}), indent=2))
         return 0
     if cmd == "read":
         url = argv[1] if len(argv) > 1 else ""

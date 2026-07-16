@@ -32,6 +32,8 @@ Ignore / de-emphasize:
 - Length: ~60–90 seconds when read aloud (about 150–220 words of script).
 - Tone: friendly, sharp, a little opinionated. Like a smart friend catching me up.
 - Structure: 2–4 "things moving right now", each 1–2 sentences, name who said what.
+- **Say people's display names aloud** (e.g. "Peter Steinberger"), not `@handles`.
+  Handles are for links in the UI, not for speech.
 - End by inviting me to interrupt with questions, and mention I can say "wrap up".
 
 ## Notes
