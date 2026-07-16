@@ -11,7 +11,7 @@ description: >-
   daily/X brief, wants to talk to their feed, or says things like "start my
   livecast" / "生成我的简报" / "早上的直播简报".
 version: 0.1.0
-homepage: https://github.com/richardtang/live-x-podcast
+homepage: https://github.com/chenmingtang830/x-livecast
 license: MIT
 ---
 

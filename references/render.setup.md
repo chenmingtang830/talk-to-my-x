@@ -11,7 +11,7 @@ Native **Python 3** only (no Docker).
 
 | Field | Value |
 | --- | --- |
-| Name | `x-livecast` (or `live-x-podcast`) |
+| Name | `x-livecast` |
 | Language | **Python 3** |
 | Branch | your deploy branch |
 | Region | closest to you |
