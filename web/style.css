@@ -388,3 +388,19 @@ html, body {
   margin: 12px 0 0;
 }
 .brief.is-hidden { display: none; }
+
+.memory-panel {
+  background: var(--panel);
+  border: 1px solid rgba(232, 184, 74, 0.4);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.memory-panel.is-hidden { display: none; }
+.memory-panel__preview {
+  margin: 8px 0 0;
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--muted);
+}

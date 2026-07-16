@@ -31,6 +31,11 @@ const els = {
   draftResult: document.getElementById("draftResult"),
   copyDraftBtn: document.getElementById("copyDraftBtn"),
   publishBtn: document.getElementById("publishBtn"),
+  memoryPanel: document.getElementById("memoryPanel"),
+  memorySummary: document.getElementById("memorySummary"),
+  memoryPreview: document.getElementById("memoryPreview"),
+  applyMemoryBtn: document.getElementById("applyMemoryBtn"),
+  dismissMemoryBtn: document.getElementById("dismissMemoryBtn"),
 };
 
 const state = {
@@ -162,7 +167,7 @@ function updateBriefBadge() {
   let label = "…";
   let cls = "brief__badge";
   if (src === "live") {
-    label = "Live · bookmarks";
+    label = "Live · feed";
     cls += " is-live";
   } else if (src === "sample") {
     label = "Sample brief";
@@ -1138,7 +1143,7 @@ async function generateTodayBrief() {
   if (!els.generateBriefBtn) return;
   els.generateBriefBtn.disabled = true;
   els.generateBriefBtn.textContent = "Generating…";
-  setBriefToast("Pulling new bookmarks…");
+  setBriefToast("Pulling bookmarks + home timeline…");
   try {
     const r = await apiFetch("/brief/generate", {
       method: "POST",
@@ -1147,15 +1152,60 @@ async function generateTodayBrief() {
     });
     const j = await r.json();
     if (!r.ok) throw new Error(j.detail || j.error || `HTTP ${r.status}`);
-    applyBriefPayload(j.brief || {});
-    const n = j.new_bookmarks != null ? j.new_bookmarks : "?";
-    setBriefToast(`Ready — ${n} new bookmark(s). Tap Start to listen.`);
+    if (j.skipped) {
+      setBriefToast("No new feed items — keeping the previous brief.");
+      if (j.brief) applyBriefPayload(j.brief);
+    } else {
+      applyBriefPayload(j.brief || {});
+      const nb = j.new_bookmarks != null ? j.new_bookmarks : 0;
+      const nt = j.new_timeline != null ? j.new_timeline : 0;
+      setBriefToast(`Ready — ${nb} bookmark(s), ${nt} timeline. Tap Start.`);
+    }
     els.briefPanel.open = true;
   } catch (err) {
     setBriefToast(err.message || String(err), true);
   } finally {
     els.generateBriefBtn.textContent = "Generate today's brief";
     setPhase(state.phase);
+  }
+}
+
+function showMemoryProposal(mem) {
+  if (!els.memoryPanel || !mem || mem.skipped || mem.ok === false) return;
+  if (!mem.changed && !mem.applied) {
+    els.memoryPanel.classList.add("is-hidden");
+    return;
+  }
+  const summary = mem.summary || (mem.applied ? "Memory updated." : "Suggested memory update from this session.");
+  const rationale = Array.isArray(mem.rationale) && mem.rationale.length
+    ? "\n\n" + mem.rationale.map((x) => "• " + x).join("\n")
+    : "";
+  els.memorySummary.textContent = summary + (mem.applied ? " (applied)" : " — review, then Apply");
+  els.memoryPreview.textContent =
+    "=== USER.md ===\n" + (mem.user_md || "") + "\n\n=== TASTE.md ===\n" + (mem.taste_md || "") + rationale;
+  els.memoryPanel.classList.remove("is-hidden");
+  if (els.applyMemoryBtn) els.applyMemoryBtn.disabled = !!mem.applied;
+  els.memoryPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+async function applyMemoryProposal() {
+  if (!els.applyMemoryBtn) return;
+  els.applyMemoryBtn.disabled = true;
+  els.applyMemoryBtn.textContent = "Applying…";
+  try {
+    const r = await apiFetch("/memory/apply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    if (els.memorySummary) els.memorySummary.textContent = (j.summary || "Applied.") + " — saved to memory/";
+    els.applyMemoryBtn.textContent = "Applied";
+  } catch (err) {
+    showError("Apply memory failed: " + (err.message || err));
+    els.applyMemoryBtn.disabled = false;
+    els.applyMemoryBtn.textContent = "Apply to memory";
   }
 }
 
@@ -1414,6 +1464,7 @@ async function synthesize() {
     if (!r.ok) throw new Error(j.detail || j.error || `HTTP ${r.status}`);
     showDraft(j.draft);
     refreshDraftList(j.draft && j.draft.id);
+    if (j.memory) showMemoryProposal(j.memory);
   } catch (err) {
     showError("Synthesize failed: " + (err.message || err));
   } finally {
@@ -1475,6 +1526,16 @@ els.publishBtn.addEventListener("click", publishDraft);
 if (els.generateBriefBtn) {
   els.generateBriefBtn.addEventListener("click", () => {
     generateTodayBrief().catch((err) => setBriefToast(err.message || String(err), true));
+  });
+}
+if (els.applyMemoryBtn) {
+  els.applyMemoryBtn.addEventListener("click", () => {
+    applyMemoryProposal().catch((err) => showError(err.message || String(err)));
+  });
+}
+if (els.dismissMemoryBtn) {
+  els.dismissMemoryBtn.addEventListener("click", () => {
+    if (els.memoryPanel) els.memoryPanel.classList.add("is-hidden");
   });
 }
 els.newThreadBtn.addEventListener("click", () => {

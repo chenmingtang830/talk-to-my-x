@@ -16,9 +16,10 @@ drafts/*.json
 bundles/*.json
 !bundles/README.md
 
-# Local backups from bundle import
+# Local backups from bundle import / memory evolve
 prompt.md.bak
 memory/*.bak
+memory/proposals/
 
 # Python
 __pycache__/

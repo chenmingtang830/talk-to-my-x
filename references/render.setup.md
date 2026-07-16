@@ -40,6 +40,8 @@ Optional: set env `XLC_XURL_BIN=/opt/render/project/src/.local/bin/xurl`.
 | --- | --- |
 | `GEMINI_API_KEY` | your key |
 | `XLC_SYNTH_MODEL` | e.g. `gemini-3.5-flash` *(Generate brief + Synthesize; not Live voice)* |
+| `XLC_MEMORY_EVOLVE` | `suggest` *(default)* \| `auto` \| `off` — USER/TASTE after Synthesize |
+| `XLC_CRON_SECRET` | shared secret for daily `POST /brief/generate` from a Cron Job |
 | `XLC_NO_BROWSER` | `1` |
 | `XLC_TUNNEL_MODE` | `none` |
 | `XLC_DATA_DIR` | `/var/data` |
@@ -76,6 +78,7 @@ Layout under the disk (see also `local-layout.md`):
 ```
 /var/data/
   sessions/   drafts/   briefs/   bundles/   .state/
+  memory/              # USER.md + TASTE.md (+ proposals/)
   home/.xurl/          # when HOME=/var/data/home
 ```
 
@@ -121,10 +124,11 @@ Tokens live under `$HOME/.xurl` on the disk.
 ## After it’s up
 
 - Phone: open the Render HTTPS URL → Start.
-- **Generate today’s brief** in the room UI (or `POST /brief/generate`, or  
-  `python3 scripts/generate_brief.py`) — needs xurl + bookmarks + `GEMINI_API_KEY`.
-- Until you generate once, the room serves `assets/sample-brief.md` (badge: **Sample brief**).
-- Sessions / drafts / briefs persist on the Disk; use the **Drafts library** dropdown to reopen Synthesize drafts.
-- Optional later: Cron Job to run `generate_brief.py` + `ensure_room.sh --dm` against `XLC_PUBLIC_URL`.
+- **Generate today’s brief** pulls **new bookmarks + home timeline** (or daily cron
+  pre-runs it — [`daily-brief.cron.md`](daily-brief.cron.md)).
+- Until the first live brief exists, the room serves `assets/sample-brief.md`.
+- After **Synthesize**, review **Taste / user update** → **Apply to memory**
+  (`XLC_MEMORY_EVOLVE=suggest`).
+- Sessions / drafts / briefs / memory persist on the Disk.
 
-See also `local-layout.md` and `TESTING.md` (Render section).
+See also `run-modes.md`, `local-layout.md`, `TESTING.md`.

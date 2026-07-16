@@ -129,29 +129,37 @@ python3 scripts/x_tools.py bookmarks 3
 
 Tokens live on the Disk under `/var/data/home/.xurl` — not in Environment.
 
-### B3. Daily use on phone
+### B3. Daily brief cron (so the room is pre-loaded)
 
-1. Open `XLC_PUBLIC_URL`.
-2. **Generate today’s brief** (needs new bookmarks; else error toast).
-3. Confirm badge **Live · bookmarks** (not Sample).
-4. **Start** → talk → Hang up → **Synthesize** / **Publish** as needed.
+See [`daily-brief.cron.md`](daily-brief.cron.md). Default idea: **8:00 America/New_York**.
 
-### B4. Cloud checklist
+1. Set `XLC_CRON_SECRET` on the Web Service.
+2. Add a Render **Cron Job** that `POST`s `/brief/generate` with `{"allow_empty":true}`.
+3. Open the room later → brief already there; **Generate** still regenerates on demand.
+
+### B4. Daily use on phone
+
+1. Open `XLC_PUBLIC_URL` (brief should already be Live from cron, or Generate once).
+2. **Start** → talk → Hang up → **Synthesize**.
+3. If a **Taste / user update** panel appears → review → **Apply to memory** (or set `XLC_MEMORY_EVOLVE=auto`).
+
+### B5. Cloud checklist
 
 - [ ] Disk + env + Build/Start from `render.setup.md`
-- [ ] `XLC_SYNTH_MODEL` set on Render if you changed it locally
+- [ ] `XLC_SYNTH_MODEL` / `XLC_MEMORY_EVOLVE` / `XLC_CRON_SECRET` as needed
 - [ ] Shell: `HOME=/var/data/home` before any `xurl` command
 - [ ] `xurl auth default <app>` after oauth2
-- [ ] Room Generate → Live badge → Start works on phone
+- [ ] Daily cron → Live badge without pressing Generate
+- [ ] Synthesize → memory proposal Apply works
 
 ---
 
 ## What generates the brief?
 
-| Path | Who | Data pulled today |
+| Path | Who | Data pulled |
 | --- | --- | --- |
-| `python3 scripts/generate_brief.py` / room **Generate** | Host Python + **Gemini text** (`XLC_SYNTH_MODEL`) | New bookmarks only (+ `prompt.md` as writing guide) |
-| Coding agent following `SKILL.md` | Your local agent (Cursor, etc.) | Whatever the recipe asks (bookmarks, search, timelines, …) |
+| `generate_brief` / room **Generate** / daily cron | Host + Gemini text (`XLC_SYNTH_MODEL`) | New **bookmarks** + **home timeline** (+ `prompt.md` / memory as guide) |
+| Coding agent following `SKILL.md` | Your local agent | Whatever the recipe asks (can add searches, etc.) |
 
 Voice **Start** uses **Gemini Live** (`XLC_GEMINI_MODEL`) — separate from text synth.
 
@@ -159,6 +167,7 @@ Voice **Start** uses **Gemini Live** (`XLC_GEMINI_MODEL`) — separate from text
 
 ## Related docs
 
+- Daily cron: [`daily-brief.cron.md`](daily-brief.cron.md)
 - File layout: [`local-layout.md`](local-layout.md)
 - Render knobs / Build strings: [`render.setup.md`](render.setup.md)
 - Named tunnel always-on (non-Render): [`always-on.setup.md`](always-on.setup.md)

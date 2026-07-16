@@ -59,7 +59,9 @@ See `references/render.setup.md`.
 - [ ] `GET $XLC_PUBLIC_URL/health` → `ok` + public URL.
 - [ ] Disk mounted at `/var/data`; env has `XLC_DATA_DIR`, `HOME=/var/data/home`, `XLC_TUNNEL_MODE=none`.
 - [ ] Build installed `xurl`; Shell: `python3 scripts/x_tools.py check` shows a binary path.
-- [ ] Room UI badge is **Sample brief** until generate; after **Generate today’s brief** → **Live · bookmarks** and `briefs/latest.json` on the disk.
+- [ ] Room UI badge is **Sample brief** until generate; after **Generate today’s brief** → **Live · feed** (bookmarks + timeline) on disk.
+- [ ] Daily cron `POST /brief/generate` with `allow_empty` + `X-XLC-Cron` keeps previous brief when nothing new.
+- [ ] Synthesize shows Taste/user proposal; **Apply to memory** writes USER/TASTE (or `XLC_MEMORY_EVOLVE=auto`).
 - [ ] Session dropdown lists prior threads with title · time; **New** works from idle and mid-call.
 - [ ] **Drafts library** lists Synthesize drafts; selecting one loads the draft panel.
 - [ ] In-room tool call works (ask about a post / bookmark) once xurl is authed.
@@ -68,7 +70,7 @@ See `references/render.setup.md`.
 ## Smoke commands
 
 ```bash
-python3 -m py_compile scripts/voice_room.py scripts/publish.py scripts/bundle_tools.py scripts/x_tools.py scripts/generate_brief.py
+python3 -m py_compile scripts/voice_room.py scripts/publish.py scripts/bundle_tools.py scripts/x_tools.py scripts/generate_brief.py scripts/evolve_memory.py scripts/memory_store.py
 python3 scripts/bundle_tools.py export
 python3 scripts/publish.py publish          # should refuse without --confirm
 python3 scripts/x_tools.py check
