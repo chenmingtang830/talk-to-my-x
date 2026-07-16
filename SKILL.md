@@ -301,11 +301,12 @@ tweet pointing people at the JSON (same confirm rules as Publishing).
 
 | Mode | When | How |
 | --- | --- | --- |
-| **Basic / demo** | Laptop tryout | `python3 scripts/voice_room.py --share --dm` (temporary `*.trycloudflare.com`) |
-| **Advanced / daily** | Always-on host (Mac Mini, VPS, OpenClaw gateway) | Set `XLC_PUBLIC_URL`, keep room up, `bash scripts/ensure_room.sh --dm` |
+| **Local** | Laptop / agent on your machine | See [`references/run-modes.md`](references/run-modes.md) Mode A |
+| **Cloud (Render)** | Phone + evergreen HTTPS | [`references/run-modes.md`](references/run-modes.md) Mode B + [`render.setup.md`](references/render.setup.md) |
+| **Demo share** | Temporary public link | `python3 scripts/voice_room.py --share --dm` (`*.trycloudflare.com`) |
+| **Named tunnel host** | Mac Mini / VPS without Render | Set `XLC_PUBLIC_URL`, [`always-on.setup.md`](references/always-on.setup.md) |
 
-Step-by-step named tunnel + gateway recipe: [`references/always-on.setup.md`](references/always-on.setup.md).
-Local files (sessions, drafts, memory, what belongs in `.env`): [`references/local-layout.md`](references/local-layout.md).
+Local files: [`references/local-layout.md`](references/local-layout.md).
 Manual release checklist: [`TESTING.md`](TESTING.md).
 
 ## Configuration
@@ -321,7 +322,7 @@ See `references/config.example.md` and `.env.example`. Key settings:
 | `XLC_ROOM_TOKEN` | (unset) | Optional gate for sensitive APIs |
 | `XLC_GEMINI_MODEL` | `gemini-3.1-flash-live-preview` | Gemini Live model (latest) |
 | `XLC_GEMINI_VOICE` | `Puck` | Prebuilt voice (Puck, Charon, Kore, Fenrir, Aoede) |
-| `XLC_SYNTH_MODEL` | `gemini-2.5-flash` | Text model for Synthesize |
+| `XLC_SYNTH_MODEL` | `gemini-3.5-flash` | Text model for Generate brief + Synthesize |
 
 ## Roadmap
 

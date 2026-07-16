@@ -460,7 +460,7 @@ def synthesize_draft(session_id: str) -> dict:
         "Write a first-person X post or short thread from this session. Link sources."
     )
     transcript = _session_transcript(session)
-    model = cfg("XLC_SYNTH_MODEL", "gemini-2.5-flash")
+    model = cfg("XLC_SYNTH_MODEL", "gemini-3.5-flash")
 
     prompt = (
         "You turn a finished X-LiveCast voice session into a shareable X draft.\n"

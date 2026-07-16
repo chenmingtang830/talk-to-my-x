@@ -108,17 +108,25 @@ def generate_brief(*, bookmark_limit: int = 25) -> dict:
             "Bookmark something new on X, or clear .state/seen.json."
         )
 
-    model = _cfg("XLC_SYNTH_MODEL", "gemini-2.5-flash")
-    today = datetime.datetime.now(datetime.timezone.utc).strftime("%a %b %d").replace(" 0", " ")
+    model = _cfg("XLC_SYNTH_MODEL", "gemini-3.5-flash")
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+    # Explicit calendar date — models invent wrong weekdays if left open-ended.
+    try:
+        today = now_utc.strftime("%A %B %-d")  # Linux
+    except ValueError:
+        today = now_utc.strftime("%A %B %d").replace(" 0", " ")  # macOS
+    today_iso = now_utc.strftime("%Y-%m-%d")
 
     synth_prompt = (
         "You write a spoken X-LiveCast brief script from the user's NEW bookmarks.\n"
         "Follow the user's prompt.md for focus, length, and tone.\n"
         "Speak display names (not @handles). ~150–220 words.\n"
         "Group into 2–4 themes. End by inviting interrupts and saying wrap up.\n"
+        f"TODAY (UTC) is {today_iso} — spoken as {today}. "
+        "Use ONLY this date in title and script. Do not invent another date.\n"
         "Output ONLY valid JSON:\n"
         "{\n"
-        '  "title": "Your X brief — <weekday month day>",\n'
+        f'  "title": "Your X brief — {today}",\n'
         '  "script": "<spoken text>",\n'
         '  "items": [\n'
         "    {\n"
@@ -141,6 +149,15 @@ def generate_brief(*, bookmark_limit: int = 25) -> dict:
     script = (draft.get("script") or "").strip()
     if not script:
         raise RuntimeError("model returned empty script")
+    # Models often invent a spoken calendar date — normalize weekday+month phrases.
+    script = re.sub(
+        r"\b(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)"
+        r",?\s+(?:January|February|March|April|May|June|July|August|September|"
+        r"October|November|December)\s+\d{1,2}(?:st|nd|rd|th)?\b",
+        today,
+        script,
+        count=3,
+    )
 
     used_ids = [str(i) for i in (draft.get("bookmark_ids") or []) if i]
     if not used_ids:
@@ -153,9 +170,10 @@ def generate_brief(*, bookmark_limit: int = 25) -> dict:
         used_ids = [str(it["id"]) for it in new_items if it.get("id")]
 
     now = datetime.datetime.now(datetime.timezone.utc)
+    # Never trust the model for the calendar date in the title.
     out = {
         "generated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "title": (draft.get("title") or f"Your X brief — {today}").strip(),
+        "title": f"Your X brief — {today}",
         "source": "bookmarks-new",
         "bookmark_ids": used_ids,
         "script": script,
