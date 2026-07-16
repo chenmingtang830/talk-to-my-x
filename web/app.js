@@ -133,7 +133,8 @@ function setPhase(phase) {
   els.hangupBtn.disabled = !onCall;
   els.synthBtn.disabled = !(hasThread || phase === "hungup");
   els.sessionSelect.disabled = onCall || phase === "connecting";
-  els.newThreadBtn.disabled = onCall || phase === "connecting";
+  // Allow New during a live/paused call (it hangs up + resets). Only block while connecting.
+  els.newThreadBtn.disabled = phase === "connecting";
 }
 
 // ---------- PCM helpers ----------
@@ -1356,7 +1357,10 @@ els.muteBtn.addEventListener("click", toggleMute);
 els.hangupBtn.addEventListener("click", hangUp);
 els.synthBtn.addEventListener("click", synthesize);
 els.publishBtn.addEventListener("click", publishDraft);
-els.newThreadBtn.addEventListener("click", () => resetToNewThread());
+els.newThreadBtn.addEventListener("click", () => {
+  hangUpLiveOnly();
+  resetToNewThread();
+});
 els.sessionSelect.addEventListener("change", () => {
   const id = els.sessionSelect.value;
   loadThread(id).catch((err) => showError(err.message || String(err)));
