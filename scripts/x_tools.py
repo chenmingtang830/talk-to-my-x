@@ -51,7 +51,7 @@ _SKIP_TAGS = {"script", "style", "noscript", "svg", "template", "nav", "footer",
 _CONTENT_TAGS = {"article", "main"}  # if present, prefer text from inside these over the whole page
 _READ_URL_USER_AGENT = (
     "Mozilla/5.0 (compatible; XLiveCastBot/1.0; local personal voice skill; "
-    "+https://github.com/richardtang/live-x-podcast)"
+    "+https://github.com/chenmingtang830/x-livecast)"
 )
 
 
