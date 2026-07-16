@@ -56,12 +56,28 @@ BRIEFS_DIR = ROOT / "briefs"
 
 
 def apply_data_dir() -> None:
-    """Point sessions/drafts/briefs/bundles at XLC_DATA_DIR when set (persistent disk)."""
+    """Point sessions/drafts/briefs/bundles at XLC_DATA_DIR when set (persistent disk).
+
+    If the path isn't writable (common on Render when Disk isn't mounted yet),
+    fall back to repo-local dirs so the room still boots.
+    """
     global SESSIONS_DIR, DRAFTS_DIR, BUNDLES_DIR, BRIEFS_DIR
     raw = os.environ.get("XLC_DATA_DIR", "").strip()
     if not raw:
         return
     base = Path(raw)
+    try:
+        base.mkdir(parents=True, exist_ok=True)
+        probe = base / ".xlc_write_probe"
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink(missing_ok=True)
+    except OSError as exc:
+        sys.stderr.write(
+            f"[X-LiveCast] XLC_DATA_DIR={base} not writable ({exc}). "
+            "Falling back to repo-local sessions/drafts/briefs. "
+            "On Render: add a Disk mounted at this path, or unset XLC_DATA_DIR.\n"
+        )
+        return
     SESSIONS_DIR = base / "sessions"
     DRAFTS_DIR = base / "drafts"
     BUNDLES_DIR = base / "bundles"
@@ -71,6 +87,7 @@ def apply_data_dir() -> None:
     # Keep publish / bundle helpers on the same volume.
     publish_mod.DRAFTS_DIR = DRAFTS_DIR
     bundle_mod.BUNDLES_DIR = BUNDLES_DIR
+    sys.stderr.write(f"[X-LiveCast] Runtime data dir: {base}\n")
 
 # Constrained endpoint required for ephemeral-token auth (v1alpha only).
 GEMINI_WS_BASE = (
