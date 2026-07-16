@@ -25,12 +25,18 @@ the live room — not re-run Python against an empty FS.
 3. Command:
 
 ```bash
-curl -fsS -X POST \
+# Wake the web service first (Starter can 503 while cold), then generate with retries.
+curl -fsS --retry 8 --retry-all-errors --retry-delay 15 \
+  https://x-livecast.onrender.com/health >/dev/null && \
+curl -fsS --retry 5 --retry-all-errors --retry-delay 10 -X POST \
   -H "X-XLC-Cron: $XLC_CRON_SECRET" \
   -H "Content-Type: application/json" \
   -d '{"allow_empty":true}' \
   "https://x-livecast.onrender.com/brief/generate"
 ```
+
+Without the health wake + retries, a cold web instance often returns **503** and
+the cron exits with `curl: (22)`.
 
 4. Env on the **Cron Job** (and matching secret on the **Web Service**):
 

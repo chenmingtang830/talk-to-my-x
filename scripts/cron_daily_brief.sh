@@ -49,7 +49,11 @@ elif [[ -n "${XLC_ROOM_TOKEN:-}" ]]; then
   AUTH_HEADER=(-H "X-XLC-Token: ${XLC_ROOM_TOKEN}")
 fi
 
-curl -fsS -X POST \
+# Wake cold instances (Render Starter often 503s on the first hit).
+curl -fsS --retry 8 --retry-all-errors --retry-delay 15 \
+  "${URL}/health" >/dev/null
+
+curl -fsS --retry 5 --retry-all-errors --retry-delay 10 -X POST \
   "${AUTH_HEADER[@]}" \
   -H "Content-Type: application/json" \
   -d '{"allow_empty":true}' \
