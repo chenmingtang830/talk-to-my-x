@@ -22,29 +22,42 @@
       <span id="status" class="status status--idle">idle</span>
     </header>
 
-    <div class="orb-row">
-      <button id="replayBack" class="orb-side-btn" title="Replay: back 5s in this morning's intro" disabled>
-        ⏪<span>5s</span>
-      </button>
-      <section class="orb" id="orb" role="button" tabindex="0" aria-label="Start or pause the session">
-        <div class="orb__core"></div>
-        <div class="orb__ring"></div>
-        <div class="orb__icon" id="orbIcon">▶</div>
-      </section>
-      <button id="replayFwd" class="orb-side-btn" title="Replay: forward 5s in this morning's intro" disabled>
-        <span>5s</span>⏩
-      </button>
+    <div class="thread-bar">
+      <select id="sessionSelect" class="thread-select" aria-label="Conversation thread">
+        <option value="">New conversation</option>
+      </select>
+      <button id="newThreadBtn" class="btn-mini" type="button">New</button>
     </div>
-    <div class="orb__label" id="orbLabel">Tap to start</div>
 
-    <section class="captions" id="captions" aria-live="polite">
-      <p class="captions__hint">Tap the circle above, allow the microphone,
-        and talk over the host any time to interrupt.</p>
+    <div class="call-controls">
+      <button id="playBtn" class="call-btn" title="Start or pause">
+        <span class="call-btn__icon" id="playIcon">▶</span>
+        <span class="call-btn__label" id="playLabel">Start</span>
+      </button>
+      <p class="call-hint" id="playHint">Tap Start — live call-in. Hang up anytime; come back to continue.</p>
+    </div>
+
+    <section class="thread" id="captions" aria-live="polite">
+      <p class="thread__hint">Your brief lands here like a DM — same words as the host, with (post) links inline. Hang up keeps the thread; Synthesize turns it into a post draft.</p>
+    </section>
+
+    <section class="draft-panel is-hidden" id="draftPanel">
+      <div class="draft-panel__head">
+        <span class="draft-panel__label">Post draft</span>
+        <div class="draft-panel__actions">
+          <button id="copyDraftBtn" class="btn-mini" type="button">Copy</button>
+          <button id="publishBtn" class="btn-mini btn-mini--accent" type="button">Publish to X</button>
+        </div>
+      </div>
+      <textarea id="draftText" class="draft-panel__edit" rows="8" spellcheck="true" placeholder="Synthesize a draft, edit it, then Publish (confirm required)."></textarea>
+      <p class="draft-panel__meta" id="draftMeta"></p>
+      <p class="draft-panel__result is-hidden" id="draftResult"></p>
     </section>
 
     <footer class="controls">
       <button id="muteBtn" class="btn" disabled>Mute mic</button>
-      <button id="stopBtn" class="btn btn--danger" disabled>End</button>
+      <button id="hangupBtn" class="btn" disabled>Hang up</button>
+      <button id="synthBtn" class="btn btn--primary" disabled>Synthesize</button>
     </footer>
 
     <details class="brief" id="briefPanel">

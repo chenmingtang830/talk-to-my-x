@@ -1,174 +1,155 @@
 # X-LiveCast
 
-A **harness-agnostic agent skill** that turns your X feed into a personalized
-audio brief **on demand** and opens a **real-time, interruptible voice room**
-hosted by Gemini Live — landed as a **link in your own X DMs** so you can open
-it on your phone and listen/interrupt on the road. (Phase D next: regenerate
-the conversation into a polished X post.)
+**v1** — harness-agnostic agent skill: turn your X feed into an on-demand audio
+brief, open a **real-time interruptible** Gemini Live voice room, continue
+threads later, **Synthesize → review → confirm-publish** to X, and share a
+portable **feed bundle**. Entry on the road is a link in your own X DMs.
 
 Works with any agent: **Claude Code, Codex, Cursor, Gemini CLI, OpenClaw, …** —
-each just reads its entry file (`AGENTS.md` / `CLAUDE.md` / …) which points to
-`SKILL.md`. The harness can run anywhere; X auth is via `xurl`, independent of
-the harness.
+each reads `AGENTS.md` / `CLAUDE.md` → `SKILL.md`. X auth is via `xurl`.
 
-> Status: **Phases B & C done** — barge-in voice room with live X tools, an
-> on-demand brief driven by your editable `prompt.md`, and on-the-road sharing
-> via a temporary HTTPS link DM'd to yourself. See `SKILL.md` for the roadmap.
+> **Needs:** free `GEMINI_API_KEY` + Python 3.9+ (stdlib only). **Optional:**
+> `xurl` (live tools + DM + publish), always-on HTTPS host. **Never auto-posts**
+> — publishing always requires an explicit confirm. Manual checklist: [`TESTING.md`](TESTING.md).
+
+## Basic vs advanced
+
+| | Basic (demo) | Advanced (daily) |
+| --- | --- | --- |
+| Host | Your laptop | Always-on box / OpenClaw gateway |
+| Link | Temporary `*.trycloudflare.com` | Evergreen `XLC_PUBLIC_URL` |
+| Command | `voice_room.py --share --dm` | `ensure_room.sh --dm` |
+| Setup | [`README` quick start](#quick-start-voice-room-demo) | [`references/always-on.setup.md`](references/always-on.setup.md) |
+
+Sessions, briefs, and drafts live on the **host disk**, not on the phone.
+Where each file goes, what auto-saves, and what you edit by hand:
+[`references/local-layout.md`](references/local-layout.md).
 
 ## Why it's different
 
-- **Real-time barge-in voice** — interrupt the host mid-sentence to ask
-  questions (powered by Gemini Live automatic VAD).
-- **On-demand, prompt-driven** — edit `prompt.md`, run the brief as often as you
-  like, any time (not just mornings).
-- **Harness does the thinking** — your agent (Claude Code / Codex / Cursor /
-  OpenClaw / …) pulls X data and writes the brief with its own model; this skill
-  provides the X tools, the brief format, and the voice layer. Text = harness
-  model. Voice = Gemini Live.
-- **Live X data** — the host calls real X tools (`search_x`, `get_home_timeline`,
-  `get_user_posts`, `get_bookmarks`) mid-conversation, and can `read_url` to
-  actually fetch and read an article a post links to.
-- **On the road by design** — your real `GEMINI_API_KEY` never reaches the
-  browser (short-lived ephemeral tokens instead); a temporary HTTPS tunnel lets
-  you open the room on your phone, away from home WiFi, from a link DM'd to you.
+- **Real-time barge-in voice** — interrupt mid-sentence (Gemini Live VAD).
+- **On-demand, prompt-driven** — edit `prompt.md`, regenerate anytime.
+- **Harness does the thinking** — your agent writes the brief; this skill owns
+  X tools, format, and the voice layer.
+- **Live X tools** mid-call (`search_x`, timeline, bookmarks, `get_post`, …).
+- **Confirmed publish** — Synthesize → edit → Publish to X (threaded supported).
+- **Feed bundles** — export/import `prompt.md` (+ taste) as JSON.
+- **On the road** — ephemeral Gemini tokens only; prefer always-on HTTPS.
 
 ## Quick start (voice room demo)
 
-Requires Python 3.9+ and a free Gemini API key
-(https://aistudio.google.com/apikey). No pip install.
-
 ```bash
-cp .env.example .env      # then edit .env and set GEMINI_API_KEY
+cp .env.example .env      # set GEMINI_API_KEY
 python3 scripts/voice_room.py
 ```
 
-Your browser opens `http://localhost:8787`. Click **Start**, allow the mic, and
-talk over the host to interrupt. Use **Pause** to freeze mid-sentence (resumes
-seamlessly, doesn't just mute). Say "wrap up" to end (posting comes in a later
-phase).
+Browser → `http://localhost:8787` → **Start**. Hang up keeps the thread;
+**Synthesize** builds a draft; **Publish to X** asks for confirm first.
 
-Environment overrides: `XLC_PORT`, `XLC_GEMINI_MODEL`, `XLC_GEMINI_VOICE`
-(see `.env.example`).
+Env: `XLC_PORT`, `XLC_GEMINI_MODEL`, `XLC_GEMINI_VOICE` (see `.env.example`).
 
-### On the road: DM yourself a real link
+### On the road: always-on URL (primary)
+
+Set `XLC_PUBLIC_URL` to your named tunnel / reverse-proxy HTTPS origin, keep
+`python3 scripts/voice_room.py --share` running on the host, then:
 
 ```bash
-brew install cloudflared          # one-time; no account needed
+bash scripts/ensure_room.sh --dm
+# or: python3 scripts/voice_room.py --dm-only
+```
+
+Full steps: [`references/always-on.setup.md`](references/always-on.setup.md).
+Optional `XLC_ROOM_TOKEN` gates APIs; DM appends `?token=…`.
+
+### Demo: temporary quick tunnel
+
+```bash
+brew install cloudflared
+# unset XLC_PUBLIC_URL (or XLC_TUNNEL_MODE=quick)
 python3 scripts/voice_room.py --share --dm
 ```
 
-This opens a temporary public HTTPS link (via a `cloudflared` quick tunnel) and
-DMs it to your own X account — open it on your phone to listen and interrupt
-away from home WiFi. The server always mints a short-lived Gemini **ephemeral
-token** for the browser (never your real key), which is also required for mic
-access to work at all on mobile (browsers require HTTPS/localhost for
-`getUserMedia`). The link dies when you stop the process.
-
-### Connect live X data (real tools)
-
-The voice room is a real agent: during the conversation the host can call
-`search_x` and `get_home_timeline`. These use the **official X CLI `xurl`**
-(same auth as X's hosted MCP), which runs locally and handles OAuth for you.
-
-One-time setup:
+### Connect live X data
 
 ```bash
-# 1. Install xurl (macOS)
 brew install --cask xdevplatform/tap/xurl
-
-# 2. Register your X app (create one at https://console.x.com, add credits)
 xurl auth apps add my-app --client-id YOUR_CLIENT_ID --client-secret YOUR_SECRET
-
-# 3. Log in with your X account (opens a browser once)
-xurl auth oauth2 --app my-app
-
-# 4. Verify
-xurl /2/users/me
+xurl auth oauth2 --app my-app        # reads / DMs
+# For publishing, app needs Read and Write — often also:
+# xurl auth oauth1 --app my-app
 python3 scripts/x_tools.py search "ai voice agents" 3
 ```
 
-Until `xurl` is set up, tool calls return a clear "X isn't connected" message
-and the host keeps going. Note: X API is pay-per-use (no free tier for new
-developers as of 2026) — reads are ~$0.005 each, so a personal daily brief is a
-few dollars/month. Posting is intentionally not exposed during the live call; it
-happens in the outer agent (Phase D) with confirmation.
+## Generate a brief
 
-## Generate a brief (on demand)
+Ask your agent to run the recipe in `SKILL.md` (“Generating a daily brief”):
+reads `prompt.md` (+ optional `memory/`), pulls X, writes `briefs/latest.json`.
 
-The brief is generated by your **agent harness**, not a hardcoded script — this
-is a skill. Edit `prompt.md` to define your topics, accounts, tone, and length,
-then ask your agent to run the recipe in `SKILL.md` ("Generating a daily brief").
-It reads `prompt.md`, pulls your X data (via the X MCP or `scripts/x_tools.py`),
-and writes `briefs/latest.json` (schema: `references/brief.schema.example.json`).
-Run it as many times a day as you want; then `python3 scripts/voice_room.py` to
-talk to it.
+## Synthesize → publish
 
-## Turn a session into a shareable post
+1. In the room: **Synthesize** → edit the draft panel.
+2. **Publish to X** → confirm → posts via `xurl` (`POST /publish` requires
+   `"confirm": true`). Or CLI: `python3 scripts/publish.py publish --confirm`.
+3. Harness recipe: “Publishing a draft (confirmed)” in `SKILL.md`.
 
-When you click **End** in the room, the full conversation (brief, every turn,
-every tool call/source looked up) is saved to `sessions/latest.json` — not just
-a summary, the raw material. Ask your agent to run the "Generating a recap
-draft" recipe in `SKILL.md`: it reads the session + your editable
-`recap_template.md` (which deliberately doesn't force a shape — a quick single
-post or a full sourced thread, your call) and writes `drafts/latest.json`
-(schema: `references/draft.schema.example.json`). Publishing is a separate,
-confirmed step (no auto-posting).
+## Feed bundles
+
+```bash
+python3 scripts/bundle_tools.py export
+python3 scripts/bundle_tools.py import bundles/latest.json
+```
+
+Schema: `references/bundle.schema.example.json`. Host/CLI only (not in the room UI).
 
 ## How it works
 
 ```
-Agent harness (anywhere) ──runs──> scripts/voice_room.py
-                                      ├─ serves web/ (voice room UI)
-                                      ├─ GET /config → mints a Gemini ephemeral token
-                                      └─ --share → cloudflared quick tunnel (HTTPS)
-                                           └─ --dm → xurl DMs the link to yourself
-Phone browser ── access_token=<ephemeral> ──> wss://generativelanguage.../BidiGenerateContentConstrained
+Always-on host ──runs──> scripts/voice_room.py (XLC_PUBLIC_URL)
+                                      ├─ web/ UI + sessions/ drafts/ bundles/
+                                      ├─ GET /config → Gemini ephemeral token
+                                      ├─ POST /publish (confirm required)
+                                      └─ ensure_room / --dm-only → evergreen DM
+Phone ── HTTPS ──> room ── access_token ──> Gemini Live (constrained WS)
 ```
-
-The server never hands the browser your real API key — it mints a short-lived
-Gemini ephemeral token per session instead (`/v1alpha/auth_tokens`). The browser
-connects directly to Gemini Live's constrained WebSocket endpoint — no audio
-proxy needed.
 
 ## Project layout
 
 ```
 x-livecast/
-├── SKILL.md                 # source of truth: skill def + all recipes
-├── AGENTS.md / CLAUDE.md    # thin harness entry files → point to SKILL.md
-├── prompt.md                # YOUR editable brief prompt (topics, accounts, tone)
-├── recap_template.md        # YOUR editable recap/post-draft style guide
+├── SKILL.md                 # source of truth + recipes
+├── TESTING.md               # manual release checklist
+├── AGENTS.md / CLAUDE.md
+├── prompt.md / recap_template.md
+├── memory/                  # USER.md + TASTE.md (optional)
 ├── scripts/
-│   ├── voice_room.py        # local server: static + /config + /brief + /tool + /session
-│   └── x_tools.py           # real X tools via the official `xurl` CLI
+│   ├── voice_room.py
+│   ├── ensure_room.sh
+│   ├── publish.py
+│   ├── bundle_tools.py
+│   └── x_tools.py
 ├── web/
-│   ├── index.html           # voice room UI
-│   ├── app.js               # WebSocket + PCM16 capture/playback + barge-in + session capture
-│   └── style.css
-├── assets/
-│   └── sample-brief.md      # fallback brief when none is generated yet
 ├── references/
+│   ├── local-layout.md      # sessions / drafts / memory / .env vs docs
+│   ├── always-on.setup.md
+│   └── *.schema.example.json
+├── briefs/ sessions/ drafts/ bundles/   # runtime JSON (gitignored)
+│   ├── always-on.setup.md
 │   ├── config.example.md
-│   ├── brief.schema.example.json   # schema/example for briefs/latest.json
-│   └── draft.schema.example.json   # schema/example for drafts/latest.json
-├── briefs/                  # generated briefs (runtime)
-├── sessions/                # captured voice sessions (runtime, gitignored)
-├── drafts/                  # generated recap drafts (runtime, gitignored)
-├── .state/                  # seen.json — dedup memory (runtime, gitignored)
-├── .env.example
-└── README.md
+│   ├── brief.schema.example.json
+│   ├── draft.schema.example.json
+│   └── bundle.schema.example.json
+├── briefs/ sessions/ drafts/ bundles/
+└── .env.example
 ```
 
 ## Roadmap
 
 | Phase | Scope | Status |
 | --- | --- | --- |
-| A | Scaffold | done |
-| B | Local barge-in voice room + in-call X tools (+ pause/captions) | done |
-| C | On-demand brief via harness recipe (`prompt.md`) | done |
-| C.5 | On-the-road sharing (ephemeral tokens + tunnel + DM) + session capture + recap draft recipe (`recap_template.md`) | done |
-| D | Review/one-click-publish UI for drafts + threaded `xurl` posting | next |
-| E | Bundle sharing (share your feed config), further polish | later |
+| A–C.6 | Scaffold, voice room, brief, share, always-on, sessions, synthesize | done |
+| D | Review + confirmed publish (single + thread) | done |
+| E | Feed bundle export/import | done |
+| Later | Richer evolving memory, ClawHub packaging polish | open |
 
 ## License
 

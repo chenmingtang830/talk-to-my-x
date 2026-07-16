@@ -2,6 +2,9 @@
 .env
 *.local
 
+# Editor
+.cursor/
+
 # Generated briefs / sessions / runtime state
 .state/
 briefs/*.json
@@ -10,6 +13,12 @@ sessions/*.json
 !sessions/.gitkeep
 drafts/*.json
 !drafts/.gitkeep
+bundles/*.json
+!bundles/README.md
+
+# Local backups from bundle import
+prompt.md.bak
+memory/*.bak
 
 # Python
 __pycache__/
