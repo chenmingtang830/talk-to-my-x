@@ -1,34 +1,29 @@
-# Secrets
+# Secrets and machine-local overrides
 .env
 *.local
 
-# Editor
-.cursor/
+# Local X Feed Loop data (when XFL_HOME points into the checkout)
+.x-feed-loop/
 
-# Generated briefs / sessions / runtime state
+# Legacy local artifacts kept only for migration; never publish or delete them
 .state/
-briefs/*.json
-!briefs/.gitkeep
-sessions/*.json
-!sessions/.gitkeep
-drafts/*.json
-!drafts/.gitkeep
-bundles/*.json
-!bundles/README.md
-
-# Local backups from bundle import / memory evolve
+briefs/
+bundles/
+drafts/
+sessions/
 prompt.md.bak
 memory/*.bak
 memory/proposals/
 
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
 .venv/
 venv/
+build/
+dist/
+*.egg-info/
 
-# OS
+# Editors and operating systems
+.cursor/
 .DS_Store
-
-# Node (only if a JS backend is ever added)
-node_modules/

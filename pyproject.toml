@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "x-feed-loop"
+version = "0.1.0"
+description = "Local state and feedback loop for thinking with your X feed"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Richard Tang" }]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/chenmingtang830/x-feed-loop"
+Repository = "https://github.com/chenmingtang830/x-feed-loop"
+
+[project.scripts]
+x-feed-loop = "x_feed_loop.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+x_feed_loop = ["templates/*.md"]

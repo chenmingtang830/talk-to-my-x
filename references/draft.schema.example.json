@@ -1,31 +1,9 @@
 {
-  "_comment": "Schema + example for drafts/latest.json. Written by Synthesize (room or harness) from sessions + recap_template.md. Either `text` (single post) OR `thread` (array of post texts). After confirmed publish, tweet_ids/urls/published_at are set.",
-  "generated_at": "2026-07-08T09:10:00-07:00",
-  "from_session": "sessions/20260708T022721.json",
-  "id": "20260708T091000Z",
-
-  "_example_single_post": {
-    "text": "Spent LiveCast on Databricks' own coding-agent evals instead of public benches. I asked whether harness choice beats model choice — turns out simpler harnesses often win on their multi-million-line codebase. https://x.com/alighodsi/status/2074996561306955958",
-    "sources": [
-      {"id": "2074996561306955958", "author": "alighodsi", "url": "https://x.com/alighodsi/status/2074996561306955958"}
-    ]
-  },
-
-  "_example_thread": {
-    "thread": [
-      "LiveCast rabbit hole today: how big cos pick models vs harnesses, then how that fits a multi-frontier AI stack.",
-      "1/ Dug into Ali Ghodsi on Databricks running internal evals on their real codebase — I asked if price tracks cost-efficiency; it doesn't. https://x.com/alighodsi/status/2074996561306955958",
-      "2/ That clicked next to Satya amplifying Demis on choice across frontier models — my takeaway: route by task, don't marry one drop. https://x.com/satyanadella/status/2077063479232795024"
-    ],
-    "sources": [
-      {"id": "2074996561306955958", "author": "alighodsi", "url": "https://x.com/alighodsi/status/2074996561306955958"},
-      {"id": "2077063479232795024", "author": "satyanadella", "url": "https://x.com/satyanadella/status/2077063479232795024"}
-    ]
-  },
-
-  "_example_after_publish": {
-    "published_at": "2026-07-09T12:00:00Z",
-    "tweet_ids": ["123", "456"],
-    "urls": ["https://x.com/i/status/123", "https://x.com/i/status/456"]
-  }
+  "text": "A source-grounded draft of at most 280 characters.",
+  "sources": [
+    "1900000000000000000"
+  ],
+  "card_ids": [
+    "reaction_20260720T120000Z_example"
+  ]
 }

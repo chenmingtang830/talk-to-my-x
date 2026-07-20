@@ -1,32 +1,15 @@
 # AGENTS.md
 
-This project is the **x-livecast** agent skill (harness-agnostic).
+This project is the **x-feed-loop** harness-agnostic agent skill.
 
-**Read `SKILL.md` and follow it.** It is the single source of truth for what
-this skill does and how to run it (generating a daily X brief, and the live
-voice room).
+Read `SKILL.md` and follow it. It is the single source of truth for composing
+the official X skill with X Feed Loop's local state CLI.
 
-Quick facts for the agent:
+Key constraints:
 
-- Generate a brief: `python3 scripts/generate_brief.py`, room **Generate today’s
-  brief** (`POST /brief/generate`), or the harness recipe in `SKILL.md` —
-  read `prompt.md` (and optional `memory/USER.md` / `memory/TASTE.md`), pull X
-  data (X MCP or `scripts/x_tools.py`), write `briefs/latest.json` (schema:
-  `references/brief.schema.example.json`).
-- **How to run (local vs Render):** `references/run-modes.md`. Cloud knobs:
-  `references/render.setup.md`. Daily cron: `references/daily-brief.cron.md`.
-  Text model: `XLC_SYNTH_MODEL`. Memory evolve: `XLC_MEMORY_EVOLVE` (`suggest`/`auto`/`off`).
-- Talk to it: `python3 scripts/voice_room.py` (needs `GEMINI_API_KEY` in `.env`).
-  Always-on: set `XLC_PUBLIC_URL`, keep the room up, then
-  `bash scripts/ensure_room.sh --dm` or `python3 scripts/voice_room.py --dm-only`
-  (same evergreen URL daily). Demo-only: `--share --dm` quick tunnel.
-  Setup: `references/always-on.setup.md`.
-- After a session: Synthesize in-room or "Generating a recap draft" in `SKILL.md`
-  → `drafts/latest.json`. **Never auto-post.**
-- Publish only after explicit user confirm: room **Publish to X**, or
-  `python3 scripts/publish.py publish --confirm`, or `POST /publish` with
-  `"confirm": true`. Needs `tweet.write`. See "Publishing a draft (confirmed)".
-- Bundles: `python3 scripts/bundle_tools.py export|import` (see SKILL "Feed bundles").
-- X access is via the `xurl` CLI. Posting uses `xurl -X POST /2/tweets`.
-- Do not commit `.env`. Confirm before posting to X or other destructive actions.
-- Manual checklist: `TESTING.md`.
+- Use the official X skill / `xurl` for every X read and write.
+- Do not add X API calls, model calls, a chat runtime, or a web service here.
+- Use `x-feed-loop` only for local posts, Reaction Cards, drafts, and memory.
+- Preserve source URLs and the user's raw reactions.
+- Never publish without showing the exact draft and receiving explicit approval.
+- Run `python3 -m unittest discover -s tests -v` and the skill validator before release.
