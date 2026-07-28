@@ -13,6 +13,13 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# `proofpress import` writes ledger events with `git commit-tree`, which
+# refuses to run without a configured identity. Set one scoped to this
+# checkout only, and only if the environment has none (CI runners have none
+# by default; a contributor's own identity is left untouched).
+git config user.email >/dev/null 2>&1 || git config user.email "proofpress-ci@localhost"
+git config user.name >/dev/null 2>&1 || git config user.name "ProofPress CI"
+
 status=0
 found=0
 
