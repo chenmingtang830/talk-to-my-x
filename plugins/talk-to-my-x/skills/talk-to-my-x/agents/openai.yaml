@@ -1,0 +1,9 @@
+interface:
+  display_name: "Talk to My X"
+  short_description: "Talk through your personal X by voice"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/logo.svg"
+  brand_color: "#111111"
+  default_prompt: "Use $talk-to-my-x to read my X, capture my reactions, and help me act safely."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,42 @@
+{
+  "name": "talk-to-my-x",
+  "version": "0.1.0",
+  "description": "Use GPT-Live and Codex to read, think through, and safely act on your personal X.",
+  "author": {
+    "name": "Richard Tang",
+    "url": "https://github.com/chenmingtang830"
+  },
+  "homepage": "https://github.com/chenmingtang830/talk-to-my-x",
+  "repository": "https://github.com/chenmingtang830/talk-to-my-x",
+  "license": "MIT",
+  "keywords": [
+    "x",
+    "voice",
+    "feed",
+    "writing",
+    "memory"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Talk to My X",
+    "shortDescription": "Talk through your personal X by voice",
+    "longDescription": "Review your X timeline, bookmarks, and news through a configurable lens; preserve reactions; draft in your voice; and perform explicitly confirmed X actions.",
+    "developerName": "Richard Tang",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/chenmingtang830/talk-to-my-x",
+    "defaultPrompt": [
+      "Read my X feed, bookmarks, and AI news through my lens.",
+      "Capture my reactions and turn them into a post in my voice.",
+      "Help me reply, follow, like, or bookmark\u2014with confirmation."
+    ],
+    "brandColor": "#111111",
+    "composerIcon": "./assets/icon.svg",
+    "logo": "./assets/logo.svg"
+  }
+}

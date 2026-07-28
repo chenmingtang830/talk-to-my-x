@@ -3,24 +3,24 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "x-feed-loop"
+name = "talk-to-my-x"
 version = "0.1.0"
-description = "Local state and feedback loop for thinking with your X feed"
+description = "Local state engine for talking to your personal X through Codex"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "Richard Tang" }]
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/chenmingtang830/x-feed-loop"
-Repository = "https://github.com/chenmingtang830/x-feed-loop"
+Homepage = "https://github.com/chenmingtang830/talk-to-my-x"
+Repository = "https://github.com/chenmingtang830/talk-to-my-x"
 
 [project.scripts]
-x-feed-loop = "x_feed_loop.cli:main"
+talk-to-my-x = "talk_to_my_x.cli:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["plugins/talk-to-my-x/lib"]
 
 [tool.setuptools.package-data]
-x_feed_loop = ["templates/*.md"]
+talk_to_my_x = ["templates/*.md"]

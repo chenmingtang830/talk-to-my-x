@@ -1,4 +1,0 @@
-interface:
-  display_name: "X Feed Loop"
-  short_description: "Think with your X feed and compound reactions"
-  default_prompt: "Use $x-feed-loop to review my X feed, capture my reactions, and shape them into a source-grounded draft."

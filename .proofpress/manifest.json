@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "runtime": "npm",
+  "package": "proofpress",
+  "adapters": [
+    "codex"
+  ]
+}

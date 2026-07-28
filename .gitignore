@@ -2,7 +2,11 @@
 .env
 *.local
 
-# Local X Feed Loop data (when XFL_HOME points into the checkout)
+# Local Talk to My X data
+.talk-to-my-x/
+.agents/skills/
+
+# Legacy X Feed Loop data retained only for migration
 .x-feed-loop/
 
 # Legacy local artifacts kept only for migration; never publish or delete them
@@ -23,6 +27,9 @@ venv/
 build/
 dist/
 *.egg-info/
+
+# Node development dependencies
+node_modules/
 
 # Editors and operating systems
 .cursor/

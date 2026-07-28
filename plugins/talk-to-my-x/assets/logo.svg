@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 160" role="img" aria-label="Talk to My X">
+  <rect width="480" height="160" rx="32" fill="#111"/>
+  <path d="M42 43h28l21 29 21-29h26L103 86l38 38h-29L90 101l-20 23H42l34-39z" fill="#fff"/>
+  <path d="M132 20a22 22 0 0 1 22 22v26l-13-10h-17a22 22 0 1 1 8-38z" fill="#6ee7b7"/>
+  <text x="180" y="96" fill="#fff" font-family="Arial, sans-serif" font-size="42" font-weight="700">Talk to My X</text>
+</svg>
