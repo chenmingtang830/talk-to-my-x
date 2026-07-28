@@ -1,17 +1,11 @@
+[//]: # (ob:3004ef20)
 # CLAUDE.md
 
-This project is the **x-livecast** agent skill (harness-agnostic).
+[//]: # (ob:d021ac05)
+This repository targets Codex v0.1. Follow `AGENTS.md` and the bundled
+Talk to My X Skill. Do not introduce a second provider-specific runtime or X
+client. Claude packaging is outside the v0.1 scope.
 
-**Read `SKILL.md` and follow it** — it is the source of truth. See also
-`AGENTS.md` for a quick summary. Key points:
-
-- Generate a brief via the "Generating a daily brief" recipe in `SKILL.md`
-  (read `prompt.md` → pull X data → write `briefs/latest.json`).
-- Voice room: `python3 scripts/voice_room.py` (needs `GEMINI_API_KEY`). Always-on:
-  `XLC_PUBLIC_URL` + `scripts/ensure_room.sh --dm` (same URL daily). Demo:
-  `--share --dm` quick tunnel. See `references/always-on.setup.md`.
-- After a session: Synthesize → `drafts/latest.json`. Publish only with explicit
-  confirm (`scripts/publish.py publish --confirm` or room UI). Never auto-post.
-- Bundles: `scripts/bundle_tools.py export|import`.
-- X access via `xurl`; posting via `xurl -X POST /2/tweets` (needs `tweet.write`).
-- Never commit `.env`; confirm before posting to X. Checklist: `TESTING.md`.
+[//]: # (proofpress:meta:eyJhcnRpZmFjdF9pZCI6InBwXzg1ZGNmNzg1NjE1NTE5MWUzZGQxNGY1NCIsInBvbGljeSI6InBvcnRhYmxlIiwicG9ydGFibGVfaGVhZCI6Ijc5YWY5NzZlIiwicG9ydGFibGVfaGVhZF9ldmVudCI6InBwZV83ODA2YjQ5ZDRjYjI3MmI1M2NmMDFmYTUiLCJwb3J0YWJsZV9saW5lYWdlX2lkIjoicHBsX2ZhMzZhZDZkZWMzZDY0ODdiMDc2MDZkOSIsInByb29mcHJlc3MiOjF9)
+[//]: # (proofpress:discovery:Verifiable revision history by Proofpress | https://github.com/chenmingtang830/proofpress)
+[//]: # (proofpress:capsule:eNqtlduO2zYQhl-FUC_r9ZLU0b4LNmlv2qJAtkWAZKEMyZHFWhZVktqNsdh371C2EacFWqQt4AuKHP5z-oZ-zsBH24GOrTXZNpumtimN7uqmrERZio3A3BhRdGWRrTLlzLE1dochkm3oQZbVtmigkrXAgnOeY9NInYvSmKbUWpu6gaIuuISiBKnyTSFVU5gOYSM6LPJC5yXpGhu0e0R_zLbP6SO2EXbkYYCYXK1ooXCgjV_R286CGpB5fLTBupH1ZO_8kakj-9k7100eQ6A7E-g97DAl9cW2d78hpTv7JNjHOIXt7e3Oxn5Wa-0Ot7rH8WDHXYRx1-T89ovbHn-fLa3bOaBvtRsDjlSL6Gd8WWU9QipivYFuU1eYnXZafFyMqLjY1g2vVLExhVaylqrMdcdFB6kKk_MxpdYOdkSK_NKRoe0gr8BUBnVuqqKpFa8rXpnNKZ1zdK2GKcwDJSxTnNp5E7Lt--fs7P45oy47H9LqdIymVVTy99k87kf3NGYPlMOFB3J998OrX16_WR9MtvoqTCBGb9UcqTutgmBDggWHroVAVYu46M2xdz7FsrdjkgzHEPFAJyMcUtMuMa3oakiNzrbjPAwUoe6pM3jKTQ1O78k657zATnIyp6ZE_PTn-M9ewJjF_ZTwwSfa-YZdm8XjlJynthEC2cvqswvDpQDNy693cU-IEq-TC3YhNYLfYQzszhn8xB75WqzZd24Y3BP7-Or7Nz_dvyXBjwxGw-LnmCbwkL08rC79zGhgUl1a7RFORV1OLh36W9ZGFxfNM3LsjBwj-PV-cnaMywT5xVOq--Urlf0hsTpYfbxSuOb3SmSZjH-JdnBdbDtqA_rJ2_MEBSW2XUnDVcBGCUX46ZIr2Wilq0IaqetalFw2quG1yKWGqlNCQK0QK7WBWmixaEeIyyScurWVxFXayCSX1Q2vb2Rzz_m2LLacf0sLnsg6F_x6wl-udp__j9lZaDux3UPok6-qVhXlkgsFZLBoXOF-BvEfMT6rCakr04miEN3monZF9lntvxDbI1PzaAY0H8Z7GPYsOvbjkb1jb_d2GNbstWNEH6OGemdmjQxYoOeIrtJb9mgN-pswoaZ3XjM_j9EekDnP3n0Y9WCJwDW7G2A2yE4PPOXHKFg3x0B3F_cpPkb_KBOu_zI-L_T7Ax-1PX4)

@@ -1,0 +1,20 @@
+{
+  "name": "talk-to-my-x",
+  "interface": {
+    "displayName": "Talk to My X"
+  },
+  "plugins": [
+    {
+      "name": "talk-to-my-x",
+      "source": {
+        "source": "local",
+        "path": "./plugins/talk-to-my-x"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

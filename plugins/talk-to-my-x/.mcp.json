@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "state": {
+      "command": "python3",
+      "args": ["scripts/state_mcp.py"],
+      "cwd": ".",
+      "env": {
+        "TTMX_HOME": "${PLUGIN_DATA}"
+      }
+    },
+    "xapi": {
+      "command": "xurl",
+      "args": ["mcp", "https://api.x.com/mcp"]
+    }
+  }
+}
