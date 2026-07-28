@@ -22,6 +22,8 @@
 
 ## Defaults
 
-- Sources: timeline, bookmarks, news
-- Maximum selections per review: 5
+- Fast scan: read only the timeline and its most recent posts.
+- Sources: timeline. Read bookmarks, news, or search only when I explicitly ask for them or say “deep dive”.
+- Maximum selections per review: 2
+- For each selection, give a concise spoken rationale; do not draft or update memory unless I ask or react.
 - Draft one concise post unless the thinking has multiple distinct parts.
