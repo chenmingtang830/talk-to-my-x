@@ -1,9 +1,12 @@
+# Skill-level interface hints. The `interface` block in
+# `plugins/talk-to-my-x/.codex-plugin/plugin.json` is authoritative for display
+# name, branding, and prompts; keep the shared values below identical to it.
 interface:
   display_name: "Talk to My X"
   short_description: "Talk through your personal X by voice"
   icon_small: "./assets/icon.svg"
   icon_large: "./assets/logo.svg"
   brand_color: "#111111"
-  default_prompt: "Use $talk-to-my-x to read my X, capture my reactions, and help me act safely."
+  default_prompt: "Read my X feed, bookmarks, and AI news through my lens."
 policy:
   allow_implicit_invocation: true

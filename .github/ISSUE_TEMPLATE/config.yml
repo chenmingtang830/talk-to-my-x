@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/chenmingtang830/talk-to-my-x/security/advisories/new
+    about: Report privately. Never open a public issue for anything exploitable.
+  - name: X API access, credits, or authentication
+    url: https://docs.x.com/tools/xurl
+    about: Credentials and API billing are handled by X, not by this plugin.

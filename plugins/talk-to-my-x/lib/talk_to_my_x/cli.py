@@ -20,6 +20,7 @@ from .store import (
     capture_reaction,
     complete_action,
     data_root,
+    data_root_source,
     ensure_layout,
     export_data,
     export_preferences,
@@ -33,7 +34,10 @@ from .store import (
 )
 
 
-def official_x_skill_path() -> Path | None:
+OFFICIAL_X_SKILL_URL = "https://docs.x.com"
+
+
+def official_x_skill_candidates() -> list[Path]:
     explicit = (os.environ.get("TTMX_X_SKILL") or "").strip()
     candidates = [
         Path(explicit).expanduser() if explicit else None,
@@ -41,7 +45,11 @@ def official_x_skill_path() -> Path | None:
         Path.home() / ".agents" / "skills" / "x" / "SKILL.md",
         Path.home() / ".codex" / "skills" / "x" / "SKILL.md",
     ]
-    return next((path.resolve() for path in candidates if path and path.is_file()), None)
+    return [path for path in candidates if path]
+
+
+def official_x_skill_path() -> Path | None:
+    return next((path.resolve() for path in official_x_skill_candidates() if path.is_file()), None)
 
 
 def stdin_json() -> Any:
@@ -59,13 +67,15 @@ def doctor() -> dict[str, Any]:
         "ok": bool(binary and x_skill),
         "version": __version__,
         "home": str(root),
+        "home_source": data_root_source(),
         "python": sys.version.split()[0],
         "xurl": binary,
         "x_auth_configured": False,
         "x_api_credits": "not_verifiable_locally",
-        "official_x_skill": "https://docs.x.com/tools/skill-md",
+        "official_x_skill": OFFICIAL_X_SKILL_URL,
         "official_x_skill_installed": bool(x_skill),
         "official_x_skill_path": str(x_skill) if x_skill else None,
+        "official_x_skill_searched": [str(path) for path in official_x_skill_candidates()],
         "onboarding_complete": "Add what you want to follow" not in (root / "preferences.md").read_text(encoding="utf-8"),
     }
     if binary:
@@ -80,7 +90,10 @@ def doctor() -> dict[str, Any]:
     if not result["ok"]:
         missing = []
         if not x_skill:
-            missing.append("install the official X Skill with `npx skills add https://docs.x.com --global --agent codex --yes`")
+            missing.append(
+                f"install the official X Skill with `npx skills add {OFFICIAL_X_SKILL_URL} "
+                "--global --agent codex --yes`, or point TTMX_X_SKILL at an existing SKILL.md"
+            )
         if not binary:
             missing.append("install official xurl")
         elif not result["x_auth_configured"]:

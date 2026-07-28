@@ -34,7 +34,8 @@ class McpContractTests(unittest.TestCase):
         ])
         self.assertEqual(rows[0]["result"]["serverInfo"]["name"], "talk-to-my-x-state")
         tools = {item["name"]: item for item in rows[1]["result"]["tools"]}
-        self.assertEqual(len(tools), 13)
+        self.assertEqual(len(tools), 12)
+        self.assertNotIn("migrate", tools)
         self.assertTrue(tools["get_context"]["annotations"]["readOnlyHint"])
         self.assertFalse(tools["prepare_action"]["annotations"]["openWorldHint"])
 

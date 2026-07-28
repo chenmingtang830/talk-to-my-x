@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.10 is the floor declared in pyproject.toml and enforced by the
+        # state MCP launcher; keep both ends of the supported range covered.
+        python-version: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # ProofPress verification reads each document's in-file capsule, but
+          # git-tracked discovery needs the full checkout to be reliable.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Compile check
+        run: python3 -m compileall -q plugins/talk-to-my-x tests
+
+      - name: Verify documentation ledgers
+        run: npm run proofpress:verify
+
+      - name: Build the package
+        run: |
+          python3 -m pip install --upgrade build
+          python3 -m build

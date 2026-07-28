@@ -1,7 +1,11 @@
 {
+  "name": "talk-to-my-x",
+  "version": "0.1.0",
   "private": true,
+  "description": "Development tooling for the Talk to My X Codex plugin",
+  "license": "MIT",
   "scripts": {
-    "proofpress:verify": "for file in AGENTS.md CLAUDE.md README.md ROADMAP.md TESTING.md docs/PRODUCT.md docs/decisions/0001-x-feed-loop.md docs/decisions/0002-talk-to-my-x.md plugins/talk-to-my-x/skills/talk-to-my-x/SKILL.md plugins/talk-to-my-x/skills/talk-to-my-x/references/actions.md plugins/talk-to-my-x/skills/talk-to-my-x/references/schemas.md; do proofpress verify \"$file\"; code=$?; if [ $code -ne 0 ] && [ $code -ne 2 ]; then exit $code; fi; done"
+    "proofpress:verify": "bash scripts/verify-docs.sh"
   },
   "devDependencies": {
     "proofpress": "^0.2.0"

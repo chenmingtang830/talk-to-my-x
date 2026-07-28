@@ -1,0 +1,35 @@
+name: Feature request
+description: Suggest a change to what the plugin does
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please read the non-goals in `ROADMAP.md` and the ground rules in
+        `CONTRIBUTING.md` first. Hosted services, a second runtime, an X API
+        wrapper, browser automation, and automatic publishing are out of scope
+        by design.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve
+      description: Describe the situation you hit, not the solution you have in mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like to happen
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - label: This keeps every X read and write on the official X tooling
+        - label: This keeps all state local to the user's machine
+        - label: This does not weaken the confirmation required before an X write

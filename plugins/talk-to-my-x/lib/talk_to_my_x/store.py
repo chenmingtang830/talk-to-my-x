@@ -61,8 +61,21 @@ def new_id(prefix: str) -> str:
     return f"{prefix}_{stamp}_{uuid.uuid4().hex[:8]}"
 
 
+DATA_ROOT_VARIABLES = ("TTMX_HOME", "PLUGIN_DATA")
+
+
+def data_root_source() -> str:
+    """Name the variable that decided the data root, or "default"."""
+
+    for name in DATA_ROOT_VARIABLES:
+        value = (os.environ.get(name) or "").strip()
+        if value and "${" not in value:
+            return name
+    return "default"
+
+
 def data_root() -> Path:
-    for name in ("TTMX_HOME", "PLUGIN_DATA", "CLAUDE_PLUGIN_DATA"):
+    for name in DATA_ROOT_VARIABLES:
         value = (os.environ.get(name) or "").strip()
         if value and "${" not in value:
             return Path(value).expanduser()

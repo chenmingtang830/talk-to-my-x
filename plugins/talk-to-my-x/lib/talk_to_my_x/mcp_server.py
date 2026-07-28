@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import sys
-from pathlib import Path
 from typing import Any, Callable
 
 from . import __version__
@@ -17,7 +16,6 @@ from .store import (
     complete_action,
     export_data,
     ingest_posts,
-    migrate_legacy,
     prepare_action,
     rollback_memory,
     save_draft,
@@ -86,12 +84,6 @@ TOOLS = [
         {"type": "object", "properties": {"snapshot_id": {"type": "string"}}, "required": ["snapshot_id"]},
     ),
     tool("export_data", "Export local data", "Create a local ZIP export containing no X credentials.", {"type": "object"}),
-    tool(
-        "migrate",
-        "Migrate legacy state",
-        "Copy supported X Feed Loop or X-LiveCast state without deleting the source.",
-        {"type": "object", "properties": {"path": {"type": "string"}}, "required": ["path"]},
-    ),
 ]
 
 
@@ -109,7 +101,6 @@ def dispatch(name: str, args: dict[str, Any]) -> dict[str, Any]:
         "apply_memory": lambda: apply_memory(args),
         "rollback_memory": lambda: rollback_memory(str(args.get("snapshot_id") or "")),
         "export_data": export_data,
-        "migrate": lambda: migrate_legacy(Path(str(args.get("path") or ""))),
     }
     if name not in handlers:
         raise TalkToMyXError(f"unknown tool: {name}")
