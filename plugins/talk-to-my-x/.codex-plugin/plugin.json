@@ -31,7 +31,7 @@
     ],
     "websiteURL": "https://github.com/chenmingtang830/talk-to-my-x",
     "defaultPrompt": [
-      "Read my X feed, bookmarks, and AI news through my lens.",
+      "Quick-scan my X timeline through my lens: review only recent timeline posts, surface at most two high-signal items, and do not open bookmarks, news, or search unless I ask.",
       "Capture my reactions and turn them into a post in my voice.",
       "Help me reply, follow, like, or bookmark\u2014with confirmation."
     ],
